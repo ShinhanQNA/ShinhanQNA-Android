@@ -1,0 +1,33 @@
+name: 민감정보 검사
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  sensitive-data-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: 키 파일 검사
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if git diff --name-only "$BASE_SHA" "$HEAD_SHA" | grep -Eq '(^|/)(\.env|\.env\..*|.*\.(pem|key|p12|jks|keystore))$'; then
+            echo "환경변수 또는 키 파일은 PR에 포함할 수 없습니다." >&2
+            exit 1
+          fi
+      - name: 추가 내용 검사
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- . ':(exclude)scripts/check-sensitive-data.sh' ':(exclude).githooks/pre-commit' |
+            awk '/^\+[^+]/ { print substr($0, 2) }' |
+            ./scripts/check-sensitive-data.sh
