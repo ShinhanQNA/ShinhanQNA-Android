@@ -2,7 +2,6 @@ package com.example.shinhan_qna_aos.servepage
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -52,6 +51,7 @@ import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.TopBar
 import com.example.shinhan_qna_aos.Data
+import com.example.shinhan_qna_aos.debugLog
 import com.example.shinhan_qna_aos.LikeFlagBan
 import com.example.shinhan_qna_aos.ManagerButton
 import com.example.shinhan_qna_aos.PlainInputField
@@ -125,7 +125,6 @@ fun WriteOpenScreen(
                     )
                 } else {
                     //  읽기 모드
-                    Log.d("Compose", "postDetail.imagePath: ${postDetail.imagePath}")
                     LazyColumn {
                         item {
                             DetailContent(detail.title, detail.content, detail.imagePath)
@@ -135,7 +134,7 @@ fun WriteOpenScreen(
                             if (data.isAdmin) {
                                 ManagerFunctionButton(
                                     onDeleteClick = {
-                                        Log.d("Compose", "삭제 버튼 클릭됨")
+                                        debugLog("WriteOpenScreen", "삭제 버튼을 눌렀습니다.")
                                         postViewModel.deletePost(postId.toInt())
                                         navController.popBackStack()
                                     },
@@ -152,7 +151,7 @@ fun WriteOpenScreen(
                                 if(isOwner){
                                     EditDeleteButton(
                                         onDeleteClick = {
-                                            Log.d("Compose", "삭제 버튼 클릭됨")
+                                            debugLog("WriteOpenScreen", "삭제 버튼을 눌렀습니다.")
                                             postViewModel.deletePost(postId.toInt())
                                             navController.popBackStack()
                                         },
@@ -161,12 +160,12 @@ fun WriteOpenScreen(
                                 }else{
                                     FlagLikeButton(
                                         onFlagClick = {
-                                            Log.d("Compose", "신고 버튼 클릭됨")
+                                            debugLog("WriteOpenScreen", "신고 버튼을 눌렀습니다.")
                                             postViewModel.flagPost(postId.toInt(), "",context)
                                             postViewModel.loadPostDetail(postId)
                                         },
                                         onLikeClick = {
-                                            Log.d("Compose", "좋아요 버튼 클릭됨")
+                                            debugLog("WriteOpenScreen", "공감 버튼을 눌렀습니다.")
                                             postViewModel.toggleLike(postId.toInt())
                                             postViewModel.loadPostDetail(postId)
                                         },

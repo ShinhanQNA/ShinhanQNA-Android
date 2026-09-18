@@ -8,6 +8,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.shinhan_qna_aos.debugLog
 import kotlinx.coroutines.launch
 
 class PostViewModel(
@@ -40,7 +41,7 @@ class PostViewModel(
                 .onSuccess {
                     postList = it
                 }
-                .onFailure { errorMessage = it.message }
+                .onFailure { errorMessage = "게시글 목록을 불러오지 못했습니다." }
         }
     }
 
@@ -52,11 +53,10 @@ class PostViewModel(
             postRepository.getPostDetail(postId)
                 .onSuccess {
                     selectedPost = it
-                    Log.d("PostViewModel", "loadPostDetail onSuccess, imagePath: ${it.imagePath}")
                 }
                 .onFailure {
-                    errorMessage = it.message
-                    Log.e("PostViewModel", "loadPostDetail error: ${it.message}")
+                    errorMessage = "게시글 상세 정보를 불러오지 못했습니다."
+                    Log.e("PostViewModel", "게시글 상세 정보를 불러오지 못했습니다.")
                 }
         }
     }
@@ -74,11 +74,11 @@ class PostViewModel(
                     hasLiked = !hasLiked
                     loadPostDetail(postId.toString())
                 } else {
-                    errorMessage = result.exceptionOrNull()?.message
-                    Log.e("PostViewModel", "toggleLike 실패: $errorMessage")
+                    errorMessage = "공감 상태를 변경하지 못했습니다."
+                    Log.e("PostViewModel", "공감 상태를 변경하지 못했습니다.")
                 }
             } catch (e: Exception) {
-                Log.e("PostViewModel", "toggleLike 예외: ${e.message}")
+                Log.e("PostViewModel", "공감 상태를 변경하지 못했습니다.")
             }
         }
     }
@@ -94,7 +94,7 @@ class PostViewModel(
                     loadPostDetail(postId.toString())
                     Toast.makeText(context, "신고 되었습니다.", Toast.LENGTH_SHORT).show()
                 }
-                .onFailure { errorMessage = it.message }
+                .onFailure { errorMessage = "게시글 신고에 실패했습니다." }
         }
     }
 
@@ -103,9 +103,9 @@ class PostViewModel(
         viewModelScope.launch {
             val result = postRepository.PostDelete(postId)
             if (result.isSuccess) {
-                Log.d("PostViewModel", "삭제 성공")
+                debugLog("PostViewModel", "게시글을 삭제했습니다.")
             } else {
-                Log.e("PostViewModel", "삭제 실패: ${result.exceptionOrNull()?.message}")
+                Log.e("PostViewModel", "게시글 삭제에 실패했습니다.")
             }
         }
     }
@@ -122,8 +122,8 @@ class PostViewModel(
                         loadPostDetail(postId)  // 상세 정보 다시 조회
                     }
                 }
-                .onFailure { error ->
-                    errorMessage = error.message
+                .onFailure {
+                    errorMessage = "사용자 경고 또는 차단에 실패했습니다."
                 }
         }
     }
@@ -137,9 +137,9 @@ class PostViewModel(
                 .onSuccess {
                     myPostList = it
                 }
-                .onFailure { error ->
-                    errorMessage = error.message
-                    Log.e("PostViewModel", "내 게시글 조회 실패: ${error.message}")
+                .onFailure {
+                    errorMessage = "내 게시글을 불러오지 못했습니다."
+                    Log.e("PostViewModel", "내 게시글을 불러오지 못했습니다.")
                 }
         }
     }

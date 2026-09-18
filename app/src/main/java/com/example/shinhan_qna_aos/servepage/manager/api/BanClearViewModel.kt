@@ -22,7 +22,7 @@ class BanClearViewModel( private val banClearRepository: BanClearRepository) : V
         viewModelScope.launch {
             banClearRepository.loadBanClearList()
             .onSuccess { banClearList = it }
-            .onFailure { Log.e("BanClearViewModel",  "신청 리스트 에러: ${it.message}") }
+            .onFailure { Log.e("BanClearViewModel", "이의신청 목록을 불러오지 못했습니다.") }
         }
     }
 
@@ -31,7 +31,7 @@ class BanClearViewModel( private val banClearRepository: BanClearRepository) : V
         viewModelScope.launch {
             banClearRepository.banClearUser(email)
             .onSuccess { banClearDetail = it }
-            .onFailure { Log.e("BanClearViewModel",  "이의 신청 상세 에러: ${it.message}") }
+            .onFailure { Log.e("BanClearViewModel", "이의신청 상세 정보를 불러오지 못했습니다.") }
         }
     }
 
@@ -40,7 +40,7 @@ class BanClearViewModel( private val banClearRepository: BanClearRepository) : V
         viewModelScope.launch {
             banClearRepository.banUserPost(email, postId)
             .onSuccess { banClearPost = it  }
-            .onFailure { Log.e("BanClearViewModel",  "이의 신청 상세 게시글 에러: ${it.message}") }
+            .onFailure { Log.e("BanClearViewModel", "이의신청 게시글을 불러오지 못했습니다.") }
         }
     }
 

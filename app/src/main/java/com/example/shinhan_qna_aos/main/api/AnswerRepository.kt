@@ -22,7 +22,7 @@ class AnswerRepository(
                     Result.success(it)
                 } ?: Result.failure(Exception("응답 데이터가 없습니다."))
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -39,7 +39,7 @@ class AnswerRepository(
                     Result.success(it)
                 } ?: Result.failure(Exception("응답 데이터가 없습니다."))
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -64,7 +64,7 @@ class AnswerRepository(
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -80,8 +80,7 @@ class AnswerRepository(
             if (response.isSuccessful) {
                 Result.success(Unit) // response.body() 체크 없이 성공 처리
             } else {
-                val errorBody = response.errorBody()?.string() ?: ""
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()} $errorBody"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)

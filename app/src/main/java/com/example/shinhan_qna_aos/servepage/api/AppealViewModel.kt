@@ -29,9 +29,8 @@ class AppealViewModel(
                 .onSuccess { data ->
                     appeal = data // 내가 쓴 게스글 리스트로 받음
                 }
-                .onFailure { error ->
-                    // 에러 처리 (예: 로그 출력)
-                    Log.e("loadAppealsError", error.message ?: "Unknown error")
+                .onFailure {
+                    Log.e("AppealViewModel", "이의신청 목록을 불러오지 못했습니다.")
                 }
         }
     }
@@ -42,10 +41,9 @@ class AppealViewModel(
             appealRepository.blockReason(email)
                 .onSuccess { data ->
                     blockReasonData = data
-                    Log.d("blockReasonData", data.toString())  // 실제 받은 데이터 로그 출력
                 }
-                .onFailure { error ->
-                    Log.e("loadBlockReasonError", error.message ?: "Unknown error")
+                .onFailure {
+                    Log.e("AppealViewModel", "차단 사유를 불러오지 못했습니다.")
                 }
         }
     }

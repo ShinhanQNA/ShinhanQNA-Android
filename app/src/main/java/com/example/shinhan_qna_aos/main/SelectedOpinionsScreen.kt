@@ -1,7 +1,6 @@
 package com.example.shinhan_qna_aos.main
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -223,9 +222,6 @@ fun SelectedDetailScreen(
 
     val selectedSort by twPostViewModel.selectedSort.collectAsState()
     val groupDetailList by twPostViewModel.groupDetailList.collectAsState()
-    Log.d("SelectedDetailScreen", "groupDetailList: $groupDetailList")
-    Log.d("SelectedDetailScreen", "selectedSort: $selectedSort")
-
     // 화면 최초 진입 시 groupId, 기본 정렬 'date'로 상세 글 리스트 로드
     LaunchedEffect(groupId) {
         twPostViewModel.loadGroupDetailPosts(groupId, selectedSort)

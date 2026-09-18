@@ -1,9 +1,18 @@
 package com.example.shinhan_qna_aos
 
 import android.content.Context
+import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyProperties
+import android.util.Base64
+import java.security.KeyStore
+import javax.crypto.Cipher
+import javax.crypto.KeyGenerator
+import javax.crypto.SecretKey
+import javax.crypto.spec.GCMParameterSpec
 
 class Data(private val context: Context) {
     private val prefs = context.getSharedPreferences("token_prefs", Context.MODE_PRIVATE)
+    private val tokenCipher = TokenCipher()
 
     companion object Companion {
         private const val KEY_ACCESS_TOKEN = "ACCESS_TOKEN"
@@ -17,15 +26,16 @@ class Data(private val context: Context) {
         private const val KEY_USER_INFO_SUBMITTED = "USER_INFO_SUBMITTED" // 가입 요청 여부
         private const val KEY_USER_EMAIL = "USER_EMAIL"
         private const val KEY_APPEAL_COMPLETED = "APPEAL_COMPLETED" // 이의신청 완료 여부 추가
+        private const val ENCRYPTED_TOKEN_PREFIX = "v1:"
     }
 
     var accessToken: String?  // 엑세스 토큰
-        get() = prefs.getString(KEY_ACCESS_TOKEN, null)
-        set(value) = prefs.edit().putString(KEY_ACCESS_TOKEN, value).apply()
+        get() = getToken(KEY_ACCESS_TOKEN)
+        set(value) = putToken(KEY_ACCESS_TOKEN, value)
 
     var refreshToken: String? // 리프래쉬 토큰
-        get() = prefs.getString(KEY_REFRESH_TOKEN, null)
-        set(value) = prefs.edit().putString(KEY_REFRESH_TOKEN, value).apply()
+        get() = getToken(KEY_REFRESH_TOKEN)
+        set(value) = putToken(KEY_REFRESH_TOKEN, value)
 
     var accessTokenExpiresAt: Long // 엑세스 만료
         get() = prefs.getLong(KEY_ACCESS_TOKEN_EXP, 0L)
@@ -97,5 +107,63 @@ class Data(private val context: Context) {
         isAppealCompleted = false
     }
 
+    private fun getToken(key: String): String? {
+        val storedValue = prefs.getString(key, null) ?: return null
+        if (!storedValue.startsWith(ENCRYPTED_TOKEN_PREFIX)) {
+            putToken(key, storedValue)
+            return storedValue
+        }
+        return tokenCipher.decrypt(storedValue)
+    }
+
+    private fun putToken(key: String, value: String?) {
+        prefs.edit().putString(key, value?.let(tokenCipher::encrypt)).apply()
+    }
+
 }
 
+private class TokenCipher {
+    private val keyStore = KeyStore.getInstance(KEY_STORE).apply { load(null) }
+
+    fun encrypt(value: String): String {
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey())
+        val encryptedValue = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
+        val payload = byteArrayOf(cipher.iv.size.toByte()) + cipher.iv + encryptedValue
+        return ENCRYPTED_TOKEN_PREFIX + Base64.encodeToString(payload, Base64.NO_WRAP)
+    }
+
+    fun decrypt(value: String): String? = runCatching {
+        val payload = Base64.decode(value.removePrefix(ENCRYPTED_TOKEN_PREFIX), Base64.NO_WRAP)
+        val ivSize = payload.first().toInt() and 0xFF
+        require(payload.size > ivSize + 1)
+        val iv = payload.copyOfRange(1, ivSize + 1)
+        val encryptedValue = payload.copyOfRange(ivSize + 1, payload.size)
+        val cipher = Cipher.getInstance(TRANSFORMATION)
+        cipher.init(Cipher.DECRYPT_MODE, secretKey(), GCMParameterSpec(TAG_LENGTH_BITS, iv))
+        cipher.doFinal(encryptedValue).toString(Charsets.UTF_8)
+    }.getOrNull()
+
+    private fun secretKey(): SecretKey =
+        (keyStore.getEntry(KEY_ALIAS, null) as? KeyStore.SecretKeyEntry)?.secretKey
+            ?: KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEY_STORE).run {
+                init(
+                    KeyGenParameterSpec.Builder(
+                        KEY_ALIAS,
+                        KeyProperties.PURPOSE_ENCRYPT or KeyProperties.PURPOSE_DECRYPT
+                    )
+                        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                        .build()
+                )
+                generateKey()
+            }
+
+    private companion object {
+        const val KEY_STORE = "AndroidKeyStore"
+        const val KEY_ALIAS = "shinhan_qna_token_key"
+        const val TRANSFORMATION = "AES/GCM/NoPadding"
+        const val ENCRYPTED_TOKEN_PREFIX = "v1:"
+        const val TAG_LENGTH_BITS = 128
+    }
+}

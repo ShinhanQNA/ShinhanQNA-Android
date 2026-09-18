@@ -39,7 +39,7 @@ class WriteRepository(
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -74,7 +74,7 @@ class WriteRepository(
             if (response.isSuccessful && response.body() != null) {
                 Result.success(response.body()!!)
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)

@@ -34,7 +34,7 @@ class PostRepository(
                 } ?: emptyList()
                 Result.success(body)
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -53,7 +53,7 @@ class PostRepository(
                 response.body()?.let { Result.success(it) }
                     ?: Result.failure(Exception("상세 데이터 없음"))
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -71,7 +71,7 @@ class PostRepository(
             if (response.isSuccessful) {
                 response.body()?.let { Result.success(it) } ?: Result.failure(Exception("좋아요 취소 실패"))
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -87,7 +87,7 @@ class PostRepository(
         return try {
             val response = apiInterface.PostLike("Bearer $accessToken", postId)
             if (response.isSuccessful) {
-                response.body()?.let { Result.success(it) } ?: Result.failure(Exception(""))
+                response.body()?.let { Result.success(it) } ?: Result.failure(Exception("공감 처리 응답이 없습니다."))
             } else {
                 // 400 에러 + "이미 공감한 게시글입니다." 메시지면 공감취소 API 시도
                 val errorBody = response.errorBody()?.string() ?: ""
@@ -95,7 +95,7 @@ class PostRepository(
                     // 좋아요 취소 API도 결과 반환
                     PostUnlike(postId)
                 } else {
-                    Result.failure(Exception("서버 오류: ${response.code()} ${response.message()} $errorBody"))
+                    Result.failure(Exception("서버 오류가 발생했습니다."))
                 }
             }
         } catch (e: Exception) {
@@ -119,8 +119,7 @@ class PostRepository(
             if (response.isSuccessful) {
                 response.body()?.let { Result.success(it) } ?: Result.failure(Exception("신고 실패"))
             } else {
-                val errorBody = response.errorBody()?.string() ?: ""
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()} $errorBody"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -137,8 +136,7 @@ class PostRepository(
             if (response.isSuccessful) {
                 Result.success(Unit) // response.body() 체크 없이 성공 처리
             } else {
-                val errorBody = response.errorBody()?.string() ?: ""
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()} $errorBody"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -158,7 +156,7 @@ class PostRepository(
                 response.body()?.let { Result.success(it) }
                     ?: Result.failure(Exception("응답이 비었습니다"))
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -177,8 +175,7 @@ class PostRepository(
                 val body = response.body() ?: emptyList()
                 Result.success(body)
             } else {
-                val errorBody = response.errorBody()?.string() ?: ""
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()} $errorBody"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)

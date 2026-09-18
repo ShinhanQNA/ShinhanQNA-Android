@@ -31,6 +31,7 @@ import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.login.api.AuthRepository
 import com.example.shinhan_qna_aos.Data
+import com.example.shinhan_qna_aos.debugLog
 import com.example.shinhan_qna_aos.info.api.InfoRepository
 import com.example.shinhan_qna_aos.login.api.LoginResult
 import com.example.shinhan_qna_aos.login.api.LoginViewModel
@@ -48,7 +49,7 @@ fun LoginScreen(authrepository: AuthRepository ,data: Data, navController: NavCo
     // 로그인 성공 시 학생 인증 상태 및 유저 상태에 따른 화면 분기 처리
     LaunchedEffect(loginResult) {
         if (loginResult is LoginResult.Success) {
-            Log.d("LoginScreen", "Login success detected")
+            debugLog("LoginScreen", "로그인 성공을 확인했습니다.")
             if (data.isAdmin){
                 navController.navigate("main"){
                     popUpTo("login") { inclusive = true }
@@ -61,13 +62,13 @@ fun LoginScreen(authrepository: AuthRepository ,data: Data, navController: NavCo
                     "가입 대기 중" -> "wait"
                     else -> "info"
                 }
-                Log.d("LoginScreen", "Navigating to $destination based on local stored data")
+                debugLog("LoginScreen", "저장된 로그인 상태에 따라 화면을 이동합니다.")
                 navController.navigate(destination) {
                     popUpTo("login") { inclusive = true }
                 }
             } else {
                 // 학생 인증이 되어있지 않은 경우 info 화면으로 이동
-                Log.d("LoginScreen", "User not certified, navigating to info")
+                debugLog("LoginScreen", "인증 화면으로 이동합니다.")
                 navController.navigate("info") {
                     popUpTo("login") { inclusive = true }
                 }
@@ -86,7 +87,7 @@ fun LoginScreen(authrepository: AuthRepository ,data: Data, navController: NavCo
                     loginViewModel.sendGoogleAuthCodeToServer(authCode)
                 }
             } catch (e: Exception) {
-                Log.e("LoginScreen", "Google login failed: ${e.localizedMessage}", e)
+                Log.e("LoginScreen", "Google 로그인에 실패했습니다.")
             }
         }
 

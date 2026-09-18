@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import com.example.shinhan_qna_aos.API.APIInterface
 import com.example.shinhan_qna_aos.Data
+import com.example.shinhan_qna_aos.debugLog
 import retrofit2.Response
 import java.time.LocalDate
 
@@ -23,21 +24,18 @@ class TWPostRepository (
             val response = apiInterface.ThreeWeekPost("Bearer $accessToken", year)
             if (response.isSuccessful) {
                 response.body()?.let {
-                    Log.d("TWPostRepository", "API 호출 성공 - 데이터 수: ${it.size}")
+                    debugLog("TWPostRepository", "API 호출에 성공했습니다: 개수=${it.size}")
                     Result.success(it)
                 } ?: run {
                     Log.e("TWPostRepository", "API 호출 성공했으나 body가 null")
                     Result.failure(Exception("응답 데이터가 없습니다."))
                 }
             } else {
-                Log.e(
-                    "TWPostRepository",
-                    "API 호출 실패 - 코드: ${response.code()}, 메시지: ${response.message()}"
-                )
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Log.e("TWPostRepository", "API 호출에 실패했습니다.")
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
-            Log.e("TWPostRepository", "API 호출 중 예외 발생", e)
+            Log.e("TWPostRepository", "API 호출에 실패했습니다.")
             Result.failure(e)
         }
     }
@@ -51,10 +49,10 @@ class TWPostRepository (
                     Result.success(it)
                 } ?: Result.failure(Exception("응답 데이터 없음"))
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
-            Log.e("TWPostRepository", "그룹 상세 API 호출 중 예외", e)
+            Log.e("TWPostRepository", "그룹 상세 정보를 불러오지 못했습니다.")
             Result.failure(e)
         }
     }
@@ -69,9 +67,9 @@ class TWPostRepository (
                     Result.success(it)
                 } ?: Result.failure(Exception("응답 데이터 없음"))
             else
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
         } catch (e: Exception) {
-            Log.e("TWPostRepository", "그룹 상태 변경 API 호출 중 예외", e)
+            Log.e("TWPostRepository", "그룹 상태를 변경하지 못했습니다.")
             Result.failure(e)
         }
     }

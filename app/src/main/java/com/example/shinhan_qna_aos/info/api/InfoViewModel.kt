@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shinhan_qna_aos.ImageUtils
 import com.example.shinhan_qna_aos.Data
+import com.example.shinhan_qna_aos.debugLog
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -108,7 +109,7 @@ private val data: Data
         // 변경 후 (무한 호출 방지)
         if (_navigationRoute.value != destination) {
             _navigationRoute.value = destination
-            Log.d("InfoViewModel", "네비게이션 경로 변경: $destination")
+            debugLog("InfoViewModel", "이동할 화면이 변경되었습니다.")
 
         }
     }
@@ -116,18 +117,18 @@ private val data: Data
     // 유저 정보 서버 조회 후 상태 갱신 및 네비게이션 분기 함수
     fun checkAndNavigateUserStatus() {
         viewModelScope.launch {
-            Log.d("InfoViewModel", "checkAndNavigateUserStatus 호출됨")
+            debugLog("InfoViewModel", "사용자 상태를 확인합니다.")
             val result = infoRepository.checkUserStatus()
             val userResponseWrapper = result.getOrNull()
 
             if (userResponseWrapper == null) {
-                Log.e("InfoViewModel", "Failed to get user status: response is null")
+                Log.e("InfoViewModel", "사용자 상태 조회에 실패했습니다: 응답이 없습니다.")
                 return@launch
             }
 
             val user = userResponseWrapper.user
             if (user == null) { // 추가: user가 null인 경우 방어 처리
-                Log.e("InfoViewModel", "User data is null in response")
+                Log.e("InfoViewModel", "응답에 사용자 데이터가 없습니다.")
                 return@launch
             }
 

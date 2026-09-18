@@ -34,11 +34,11 @@ class DeclarationViewModel(private val declarationRepository: DeclarationReposit
                         rejectResult = true // 성공 처리
                     }
                     .onFailure {
-                        Log.e("DeclarationViewModel", "Failed to reject: ${it.message}")
+                        Log.e("DeclarationViewModel", "신고 반려에 실패했습니다.")
                         rejectResult = false
                     }
             } catch (e: Exception) {
-                Log.e("DeclarationViewModel", "Exception in DeclarationReject: ${e.message}")
+                Log.e("DeclarationViewModel", "신고 반려에 실패했습니다.")
                 rejectResult = false
             }
         }

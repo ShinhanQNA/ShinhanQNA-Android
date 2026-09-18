@@ -20,11 +20,9 @@ class InfoRepository(private val apiInterface: APIInterface, private val data:Da
             if (response.isSuccessful) {
                 response.body()?.let {
                     Result.success(it)
-                } ?: Result.failure(Exception("Empty response body"))
+                } ?: Result.failure(Exception("응답 데이터가 없습니다."))
             } else {
-                // 500 등 실패 응답에 message나 status 들어올 수 있어 적절히 처리
-                val errorMsg = response.errorBody()?.string() ?: "Unknown error"
-                Result.failure(Exception("Error ${response.code()}: $errorMsg"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -62,13 +60,10 @@ class InfoRepository(private val apiInterface: APIInterface, private val data:Da
                 if (body != null) {
                     Result.success(body)
                 } else {
-                    Result.failure(Exception("Empty response body"))
+                    Result.failure(Exception("응답 데이터가 없습니다."))
                 }
             } else {
-                // 서버에서 에러 메시지 JSON을 받는다고 가정하고,
-                // 에러 바디를 파싱할 수 있으면 파싱, 아니면 문자열 처리
-                val errorString = response.errorBody()?.string()
-                Result.failure(Exception("Error ${response.code()}: $errorString"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)

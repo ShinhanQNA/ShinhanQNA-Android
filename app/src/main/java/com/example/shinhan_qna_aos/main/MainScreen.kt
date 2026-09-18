@@ -1,7 +1,6 @@
 package com.example.shinhan_qna_aos.main
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -49,6 +48,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.Data
+import com.example.shinhan_qna_aos.debugLog
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.info.api.InfoRepository
 import com.example.shinhan_qna_aos.info.api.InfoViewModel
@@ -86,7 +86,7 @@ fun MainScreen(
                     // popUpTo를 사용하여 뒤로 가기 시 무한 루프에 빠지는 것을 방지합니다.
                     popUpTo("main") { inclusive = true }
                 }
-                Log.d("Navigation", "화면 이동: $route")
+                debugLog("Navigation", "화면 경로가 변경되었습니다.")
             }
         }
     }
