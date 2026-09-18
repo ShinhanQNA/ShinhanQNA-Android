@@ -20,8 +20,7 @@ class AppealRepository(
                     Result.failure(Exception("응답 데이터 없음"))
                 }
             } else {
-                val errorBody = response.errorBody()?.string() ?: ""
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()} $errorBody"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -42,8 +41,7 @@ class AppealRepository(
                     Result.failure(Exception("차단 이유 데이터 없음"))
                 }
             } else {
-                val errorBody = response.errorBody()?.string() ?: ""
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()} $errorBody"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)

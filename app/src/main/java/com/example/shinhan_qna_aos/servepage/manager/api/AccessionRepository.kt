@@ -18,7 +18,7 @@ class AccessionRepository(
                 if (body != null) {
                     return Result.success(body)
                 } else {
-                    return Result.failure(Exception("Response body is null"))
+                    return Result.failure(Exception("응답 데이터가 없습니다."))
                 }
             } else {
                 return Result.failure(Exception("에러: ${response.code()}"))
@@ -38,7 +38,7 @@ class AccessionRepository(
                 if (body != null) {
                     return Result.success(body)
                 } else {
-                    return Result.failure(Exception("Response body is null"))
+                    return Result.failure(Exception("응답 데이터가 없습니다."))
                 }
             } else {
                 return Result.failure(Exception("에러: ${response.code()}"))
@@ -61,7 +61,7 @@ class AccessionRepository(
                 if (body != null) {
                     return Result.success(Unit)
                 } else {
-                    return Result.failure(Exception("Response body is null"))
+                    return Result.failure(Exception("응답 데이터가 없습니다."))
                 }
             } else {
                 return Result.failure(Exception("에러: ${response.code()}"))

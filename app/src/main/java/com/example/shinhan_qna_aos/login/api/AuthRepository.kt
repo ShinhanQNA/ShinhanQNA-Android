@@ -24,7 +24,7 @@ class AuthRepository(
                     saveTokens(it, isAdmin = true) // 관리자 여부 저장
                 } ?: throw Exception("로그인 응답이 비어있습니다.")
             } else {
-                throw Exception("로그인 실패: ${response.code()} ${response.message()}")
+                throw Exception("로그인에 실패했습니다.")
             }
         }
     }
@@ -38,7 +38,7 @@ class AuthRepository(
                     saveTokens(it, isAdmin = false) // 기본적으로 일반 사용자
                 } ?: throw Exception("응답 데이터 없음")
             } else {
-                throw Exception("로그인 실패: ${response.code()} ${response.message()}")
+                throw Exception("로그인에 실패했습니다.")
             }
         }
     }
@@ -52,7 +52,7 @@ class AuthRepository(
                     saveTokens(it, isAdmin = false)
                 } ?: throw Exception("응답 데이터 없음")
             } else {
-                throw Exception("로그인 실패: ${response.code()} ${response.message()}")
+                throw Exception("로그인에 실패했습니다.")
             }
         }
     }
@@ -110,8 +110,7 @@ class AuthRepository(
                     Result.success(it)
                 } ?: Result.failure(Exception("서버 응답이 비어있습니다."))
             } else {
-                val errorBody = response.errorBody()?.string() ?: ""
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()} $errorBody"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -131,8 +130,7 @@ class AuthRepository(
                     Result.success(it)
                 } ?: Result.failure(Exception("서버 응답이 비어있습니다."))
             } else {
-                val errorBody = response.errorBody()?.string() ?: ""
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()} $errorBody"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)

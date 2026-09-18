@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.shinhan_qna_aos.debugLog
 import com.example.shinhan_qna_aos.main.api.Answer
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -62,11 +63,11 @@ class NotificationViewModel(private val repository: NotificationRepository) : Vi
             )
             result
                 .onSuccess {
-                    Log.d("AnswerViewModel", "답변 작성 성공")
+                    debugLog("NotificationViewModel", "공지를 작성했습니다.")
                     onSusscess()
                     loadNotification()
                 }
-                .onFailure { Log.d("AnswerViewModel", "답변 작성 실패") }
+                .onFailure { debugLog("NotificationViewModel", "공지 생성에 실패했습니다.") }
         }
     }
 
@@ -109,9 +110,9 @@ class NotificationViewModel(private val repository: NotificationRepository) : Vi
         viewModelScope.launch {
             val result = repository.NoticesDelete(id)
             if (result.isSuccess) {
-                Log.d("PostViewModel", "삭제 성공")
+                debugLog("NotificationViewModel", "공지를 삭제했습니다.")
             } else {
-                Log.e("PostViewModel", "삭제 실패: ${result.exceptionOrNull()?.message}")
+                Log.e("NotificationViewModel", "공지 삭제에 실패했습니다.")
             }
         }
     }

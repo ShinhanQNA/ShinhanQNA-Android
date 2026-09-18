@@ -6,6 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.shinhan_qna_aos.debugLog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -64,11 +65,11 @@ class AnswerViewModel(private val repository: AnswerRepository) : ViewModel() {
             )
             result
                 .onSuccess {
-                    Log.d("AnswerViewModel", "답변 작성 성공")
+                    debugLog("AnswerViewModel", "답변을 작성했습니다.")
                     onSusscess()
                     loadAnswers()
                 }
-                .onFailure { Log.d("AnswerViewModel", "답변 작성 실패") }
+                .onFailure { debugLog("AnswerViewModel", "답변 생성에 실패했습니다.") }
         }
     }
 
@@ -110,9 +111,9 @@ class AnswerViewModel(private val repository: AnswerRepository) : ViewModel() {
         viewModelScope.launch {
             val result = repository.AnswerDelete(id)
             if (result.isSuccess) {
-                Log.d("PostViewModel", "삭제 성공")
+                debugLog("AnswerViewModel", "답변을 삭제했습니다.")
             } else {
-                Log.e("PostViewModel", "삭제 실패: ${result.exceptionOrNull()?.message}")
+                Log.e("AnswerViewModel", "답변 삭제에 실패했습니다.")
             }
         }
     }

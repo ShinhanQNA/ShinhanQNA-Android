@@ -1,7 +1,6 @@
 package com.example.shinhan_qna_aos
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -122,7 +121,7 @@ fun AppNavigation(
                 initialRoute = "main"
             }
             else if (!isInitialStatusChecked) { // 최초 1회만 유저 상태 확인 호출
-                Log.d("AppNavigation", "로그인 성공 감지, 서버 상태 조회 시작")
+                debugLog("AppNavigation", "로그인 성공을 확인했습니다.")
                 infoViewModel.checkAndNavigateUserStatus()
                 isInitialStatusChecked = true
             }
@@ -138,12 +137,12 @@ fun AppNavigation(
         navigationRoute?.let { route ->
             if (initialRoute == null) {
                 initialRoute = route
-                Log.d("AppNavigation", "초기 경로 확정: $route")
+                debugLog("AppNavigation", "초기 화면 경로를 설정했습니다.")
             } else if (navController.currentBackStackEntry?.destination?.route != route) {
                 navController.navigate(route) {
                     popUpTo(0) { inclusive = true }
                 }
-                Log.d("AppNavigation", "네비게이션 경로 변경: $route")
+                debugLog("AppNavigation", "화면 경로가 변경되었습니다.")
             }
         }
     }
@@ -155,7 +154,7 @@ fun AppNavigation(
             if (event == Lifecycle.Event.ON_RESUME) {
                 loginViewModel.tryRefreshTokenIfNeeded()
                 infoViewModel.checkAndNavigateUserStatus()
-                Log.d("Lifecycle", "App resumed - 로그인 및 유저 상태 즉시 갱신 호출")
+                debugLog("Lifecycle", "앱이 다시 활성화되었습니다.")
             }
         }
 
@@ -166,7 +165,7 @@ fun AppNavigation(
                 delay(60_000) // 60초
                 loginViewModel.tryRefreshTokenIfNeeded()
                 infoViewModel.checkAndNavigateUserStatus()
-                Log.d("PeriodicCheck", "1분 주기 로그인 및 유저 상태 검사 호출")
+                debugLog("PeriodicCheck", "사용자 상태를 정기 확인합니다.")
             }
         }
 

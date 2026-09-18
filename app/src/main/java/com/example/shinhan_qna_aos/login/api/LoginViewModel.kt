@@ -79,7 +79,7 @@ class LoginViewModel(
                 }
                 .onFailure { e ->
                     // 로그아웃 실패처리 예: 로그 출력 또는 UI 알림
-                    Log.e("Logout", "로그아웃 실패: ${e.localizedMessage}")
+                    Log.e("LoginViewModel", "로그아웃에 실패했습니다.")
                 }
         }
     }
@@ -95,7 +95,7 @@ class LoginViewModel(
                 }
                 .onFailure { e ->
                     // 로그아웃 실패처리 예: 로그 출력 또는 UI 알림
-                    Log.e("cancle", "회원탈퇴 실패: ${e.localizedMessage}")
+                    Log.e("LoginViewModel", "회원 탈퇴에 실패했습니다.")
                 }
         }
     }

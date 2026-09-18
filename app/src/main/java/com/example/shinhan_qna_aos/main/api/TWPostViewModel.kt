@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.shinhan_qna_aos.debugLog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,15 +36,14 @@ class TWPostViewModel(private val repository: TWPostRepository) : ViewModel() {
     @RequiresApi(Build.VERSION_CODES.O)
     fun loadOpinions() {
         viewModelScope.launch {
-            Log.d("TWPostViewModel", "의견 데이터 요청 시작")
+            debugLog("TWPostViewModel", "의견 목록을 불러옵니다.")
             val result = repository.fetchThreeWeekOpinions()
             if (result.isSuccess) {
-                Log.d("TWPostViewModel", "의견 데이터 요청 성공")
+                debugLog("TWPostViewModel", "의견 목록을 불러왔습니다.")
                 val opinions = result.getOrNull() ?: emptyList()
                 _opinions.value = opinions
             } else {
-                val error = result.exceptionOrNull()?.localizedMessage ?: "알 수 없는 오류"
-                Log.e("TWPostViewModel", "의견 데이터 요청 실패: $error")
+                Log.e("TWPostViewModel", "의견 목록을 불러오지 못했습니다.")
             }
         }
     }
@@ -55,14 +55,14 @@ class TWPostViewModel(private val repository: TWPostRepository) : ViewModel() {
             if (result.isSuccess) {
                 val twPostData = result.getOrNull()
                 if (twPostData != null) {
-                    Log.d("TWPostViewModel", "loadGroupDetailPosts: year=${twPostData.selectedYear}, month=${twPostData.selectedMonth}, opinions=${twPostData.opinions.size}")
+                    debugLog("TWPostViewModel", "그룹 상세 정보를 불러왔습니다: 의견 수=${twPostData.opinions.size}")
                     _groupDetailList.value = twPostData.opinions
                     _selectedYear.value = twPostData.selectedYear
                     _selectedMonth.value = twPostData.selectedMonth
                     _selectedSort.value = sort
                 }
             } else {
-                Log.e("TWPostViewModel", "그룹 상세 데이터 요청 실패: ${result.exceptionOrNull()?.localizedMessage}")
+                Log.e("TWPostViewModel", "그룹 상세 정보를 불러오지 못했습니다.")
             }
         }
     }
@@ -81,9 +81,9 @@ class TWPostViewModel(private val repository: TWPostRepository) : ViewModel() {
             val result = repository.putStatus(groupId, status)
             if (result.isSuccess) {
                 loadOpinions()
-                Log.d("TWPostViewModel", "그룹 상태 변경 성공")
+                debugLog("TWPostViewModel", "그룹 상태를 변경했습니다.")
             } else {
-                Log.e("TWPostViewModel", "그룹 상태 변경 실패: ${result.exceptionOrNull()?.localizedMessage}")
+                Log.e("TWPostViewModel", "그룹 상태를 변경하지 못했습니다.")
             }
         }
     }

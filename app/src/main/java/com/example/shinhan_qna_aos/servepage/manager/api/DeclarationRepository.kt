@@ -18,7 +18,7 @@ class DeclarationRepository (
                     Result.success(it)
                 } ?: Result.failure(Exception("응답 데이터가 없습니다."))
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()} ${response.message()}"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         }catch ( e:Exception){
             Result.failure(e)
@@ -35,8 +35,7 @@ class DeclarationRepository (
                     Result.success(it)
                 } ?: Result.failure(Exception("응답 데이터가 없습니다."))
             } else {
-                val errorMsg = response.errorBody()?.string() ?: "알 수 없는 오류"
-                Result.failure(Exception("Error ${response.code()}: $errorMsg"))
+                Result.failure(Exception("서버 오류가 발생했습니다."))
             }
         } catch (e: Exception) {
             Result.failure(e)
