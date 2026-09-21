@@ -2,6 +2,7 @@ package com.example.shinhan_qna_aos.API
 
 import com.example.shinhan_qna_aos.info.api.InfoResponse
 import com.example.shinhan_qna_aos.info.api.OwnStatusRequest
+import com.example.shinhan_qna_aos.FcmTokenRequest
 import com.example.shinhan_qna_aos.info.api.UserResponseWrapper
 import com.example.shinhan_qna_aos.login.api.AdminRequest
 import com.example.shinhan_qna_aos.login.api.LoginTokensResponse
@@ -112,6 +113,12 @@ interface APIInterface {
     suspend fun updateOwnStatus(
         @Header("Authorization") accessToken: String,
         @Body request: OwnStatusRequest
+    ): Response<Unit>
+
+    @POST("/users/fcm-token")
+    suspend fun registerFcmToken(
+        @Header("Authorization") accessToken: String,
+        @Body request: FcmTokenRequest
     ): Response<Unit>
 
     //게시글 조회
@@ -355,4 +362,3 @@ interface APIInterface {
         @Body banClearStatus: BanClearStatus
     ):Response<BanClearStatusResponse>
 }
-

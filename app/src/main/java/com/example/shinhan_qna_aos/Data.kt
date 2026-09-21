@@ -106,6 +106,7 @@ class Data(private val context: Context) {
         refreshTokenExpiresAt = 0
         isAdmin = false
         isReapplying = false
+        revokeDevicePushToken(context)
     }
 
     fun clearAccountData() {
@@ -122,6 +123,7 @@ class Data(private val context: Context) {
             .remove(KEY_REAPPLYING)
             .putBoolean(KEY_IS_ADMIN, false)
             .apply()
+        revokeDevicePushToken(context)
     }
 
     // 재차단 등 상태 변경 시 호출해 이의신청 완료 상태를 초기화 가능

@@ -100,8 +100,13 @@ fun AppNavigation(
         viewModel(factory = SimpleViewModelFactory { LoginViewModel(authRepository, data) })
     val infoViewModel: InfoViewModel =
         viewModel(factory = SimpleViewModelFactory { InfoViewModel(infoRepository, data) })
+    val pushTokenRegistrar = remember { PushTokenRegistrar(context.applicationContext, apiInterface, data) }
 
     val loginResult by loginViewModel.loginResult.collectAsState()
+
+    LaunchedEffect(loginResult) {
+        if (loginResult is LoginResult.Success) pushTokenRegistrar.syncCurrentToken()
+    }
 
     // 라우트 변경 감시 → 네비게이션 처리 (여기서만!)
     val navigationRoute by infoViewModel.navigationRoute.collectAsState()
