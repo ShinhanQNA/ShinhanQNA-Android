@@ -106,6 +106,7 @@ class Data(private val context: Context) {
         refreshTokenExpiresAt = 0
         isAdmin = false
         isReapplying = false
+        PushNotificationStore.clear(context)
         revokeDevicePushToken(context)
     }
 
@@ -123,6 +124,7 @@ class Data(private val context: Context) {
             .remove(KEY_REAPPLYING)
             .putBoolean(KEY_IS_ADMIN, false)
             .apply()
+        PushNotificationStore.clear(context)
         revokeDevicePushToken(context)
     }
 

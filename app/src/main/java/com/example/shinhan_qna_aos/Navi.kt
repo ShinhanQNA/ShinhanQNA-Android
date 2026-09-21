@@ -21,6 +21,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.shinhan_qna_aos.API.APIInterface
@@ -50,6 +51,7 @@ import com.example.shinhan_qna_aos.main.api.PostRepository
 import com.example.shinhan_qna_aos.main.api.TWPostRepository
 import com.example.shinhan_qna_aos.onboarding.OnboardingScreen
 import com.example.shinhan_qna_aos.servepage.AlarmScreen
+import com.example.shinhan_qna_aos.servepage.AlarmViewModel
 import com.example.shinhan_qna_aos.servepage.user.MypageScreen
 import com.example.shinhan_qna_aos.servepage.NotificationOpenScreen
 import com.example.shinhan_qna_aos.servepage.NotificationScreen
@@ -78,7 +80,8 @@ import kotlinx.coroutines.launch
 @Composable
 fun AppNavigation(
     navController: NavHostController = rememberNavController(),
-    apiInterface: APIInterface
+    apiInterface: APIInterface,
+    notificationLaunch: NotificationLaunch? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -100,16 +103,36 @@ fun AppNavigation(
         viewModel(factory = SimpleViewModelFactory { LoginViewModel(authRepository, data) })
     val infoViewModel: InfoViewModel =
         viewModel(factory = SimpleViewModelFactory { InfoViewModel(infoRepository, data) })
+    val alarmViewModel: AlarmViewModel =
+        viewModel(factory = SimpleViewModelFactory { AlarmViewModel(context) })
     val pushTokenRegistrar = remember { PushTokenRegistrar(context.applicationContext, apiInterface, data) }
 
     val loginResult by loginViewModel.loginResult.collectAsState()
+    val currentBackStackEntry by navController.currentBackStackEntryAsState()
+    var handledNotificationEvent by remember { mutableStateOf<Long?>(null) }
+
+    // 라우트 변경 감시 → 네비게이션 처리 (여기서만!)
+    val navigationRoute by infoViewModel.navigationRoute.collectAsState()
 
     LaunchedEffect(loginResult) {
         if (loginResult is LoginResult.Success) pushTokenRegistrar.syncCurrentToken()
     }
 
-    // 라우트 변경 감시 → 네비게이션 처리 (여기서만!)
-    val navigationRoute by infoViewModel.navigationRoute.collectAsState()
+    LaunchedEffect(notificationLaunch, loginResult, navigationRoute, currentBackStackEntry) {
+        val launch = notificationLaunch ?: return@LaunchedEffect
+        if (handledNotificationEvent == launch.eventId || loginResult !is LoginResult.Success) return@LaunchedEffect
+        if (navigationRoute != null && navigationRoute != "main" && !data.isAdmin) {
+            handledNotificationEvent = launch.eventId
+            return@LaunchedEffect
+        }
+        val currentRoute = currentBackStackEntry?.destination?.route ?: return@LaunchedEffect
+        if (data.onboarding || currentRoute == "login" || currentRoute == "onboarding") return@LaunchedEffect
+        if (navigationRoute == "main" || data.isAdmin) {
+            navController.navigate(launch.route ?: "alarm") { launchSingleTop = true }
+            alarmViewModel.markRead(launch.key)
+            handledNotificationEvent = launch.eventId
+        }
+    }
 
     // 앱 최초 진입 시 빠르게 보여줄 초기 화면 결정용 상태
     var initialRoute by remember { mutableStateOf<String?>(null) }
@@ -262,7 +285,7 @@ fun AppNavigation(
         }
         composable("notices_write"){ NotificationWriteScreen(notificationRepository, navController) } // 관리자 공지 작성 화면
 
-        composable("alarm") { AlarmScreen(navController) } // 알림 화면 나중에 firebase
+        composable("alarm") { AlarmScreen(navController, alarmViewModel) }
 
         composable("appeal1"){ AppealScreen1(appealRepository, infoRepository, data, navController) } // 차단 당했을 경우 사용자 제한 화면으로 appeal3까지 세트
         composable("appeal2"){ AppealScreen2(appealRepository, data, navController) }
@@ -308,4 +331,11 @@ class SimpleViewModelFactory<T: ViewModel>(
     private val creator: () -> T
 ): ViewModelProvider.Factory {
     override fun <VM : ViewModel> create(modelClass: Class<VM>): VM = creator() as VM
+}
+
+internal fun routeForNotification(type: String?, id: String?): String? = when (type) {
+    "notice" -> id?.toIntOrNull()?.takeIf { it > 0 }?.let { "notices/$it" }
+    "answer" -> id?.toIntOrNull()?.takeIf { it > 0 }?.let { "answerOpen/$it" }
+    "post" -> id?.toIntOrNull()?.takeIf { it > 0 }?.let { "writeOpen/$it" }
+    else -> null
 }

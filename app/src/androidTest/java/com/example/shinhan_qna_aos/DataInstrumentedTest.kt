@@ -6,6 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class DataInstrumentedTest {
@@ -42,6 +43,7 @@ class DataInstrumentedTest {
             data.isAppealCompleted = true
             data.isReapplying = true
             data.isAdmin = true
+            PushNotificationStore.add(context, "알림", "내용", "notice", "1")
 
             data.clearAccountData()
 
@@ -56,9 +58,32 @@ class DataInstrumentedTest {
             assertFalse(data.isAppealCompleted)
             assertFalse(data.isReapplying)
             assertFalse(data.isAdmin)
+            assertTrue(PushNotificationStore.all(context).isEmpty())
         } finally {
             data.clearAccountData()
         }
     }
 
+    @Test
+    fun savesReadsAndDeletesNotifications() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        PushNotificationStore.clear(context)
+
+        try {
+            val notification = PushNotificationStore.add(context, "공지", "새 공지가 있습니다.", "notice", "1")
+            assertFalse(PushNotificationStore.all(context).single().isRead)
+
+            PushNotificationStore.markRead(context, notification.key)
+            assertTrue(PushNotificationStore.all(context).single().isRead)
+
+            PushNotificationStore.remove(context, notification.key)
+            assertTrue(PushNotificationStore.all(context).isEmpty())
+
+            PushNotificationStore.add(context, "공지", "내용", "notice", "1", "message-1")
+            PushNotificationStore.add(context, "공지", "내용", "notice", "1", "message-1")
+            assertEquals(1, PushNotificationStore.all(context).size)
+        } finally {
+            PushNotificationStore.clear(context)
+        }
+    }
 }
