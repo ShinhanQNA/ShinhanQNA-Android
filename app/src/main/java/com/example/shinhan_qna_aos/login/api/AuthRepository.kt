@@ -105,10 +105,8 @@ class AuthRepository(
         return try {
             val response = apiInterface.LogOut("Bearer $refreshToken")
             if (response.isSuccessful) {
-                response.body()?.let {
-                    data.clearTokens()
-                    Result.success(it)
-                } ?: Result.failure(Exception("서버 응답이 비어있습니다."))
+                data.clearTokens()
+                Result.success(response.body() ?: LogoutData("로그아웃되었습니다."))
             } else {
                 Result.failure(Exception("서버 오류가 발생했습니다."))
             }
@@ -125,10 +123,8 @@ class AuthRepository(
         return try {
             val response = apiInterface.CancelMember("Bearer $accessToken")
             if (response.isSuccessful) {
-                response.body()?.let {
-                    data.clearTokens()
-                    Result.success(it)
-                } ?: Result.failure(Exception("서버 응답이 비어있습니다."))
+                data.clearAccountData()
+                Result.success(response.body() ?: LogoutData("회원 탈퇴가 완료되었습니다."))
             } else {
                 Result.failure(Exception("서버 오류가 발생했습니다."))
             }

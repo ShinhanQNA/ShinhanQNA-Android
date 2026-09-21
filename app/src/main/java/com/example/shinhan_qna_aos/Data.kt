@@ -108,6 +108,22 @@ class Data(private val context: Context) {
         isReapplying = false
     }
 
+    fun clearAccountData() {
+        prefs.edit()
+            .remove(KEY_ACCESS_TOKEN)
+            .remove(KEY_REFRESH_TOKEN)
+            .remove(KEY_ACCESS_TOKEN_EXP)
+            .remove(KEY_REFRESH_TOKEN_EXP)
+            .remove(KEY_USER_STATUS)
+            .remove(KEY_USER_NAME)
+            .remove(KEY_USER_EMAIL)
+            .remove(KEY_USER_INFO_SUBMITTED)
+            .remove(KEY_APPEAL_COMPLETED)
+            .remove(KEY_REAPPLYING)
+            .putBoolean(KEY_IS_ADMIN, false)
+            .apply()
+    }
+
     // 재차단 등 상태 변경 시 호출해 이의신청 완료 상태를 초기화 가능
     fun clearAppealCompleted() {
         isAppealCompleted = false
