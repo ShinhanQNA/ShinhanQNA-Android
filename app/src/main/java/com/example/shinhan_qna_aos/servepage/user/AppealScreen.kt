@@ -116,7 +116,11 @@ fun AppealScreen1(appealRepository: AppealRepository,infoRepository: InfoReposit
             modifier = Modifier
                 .background(Color(0xffFC4F4F), RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                .clickable { navController.navigate("appeal2") },
+                .clickable {
+                    navController.navigate("appeal2") {
+                        popUpTo("appeal1") { inclusive = true }
+                    }
+                },
         ) {
             Icon(
                 painter = painterResource(lucide.user),
@@ -198,10 +202,12 @@ fun AppealScreen2(appealRepository: AppealRepository, data: Data, navController:
                 .background(Color.Black, RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
                 .clickable {
-                    appealViewModel.loadAppeals()
-                    data.isAppealCompleted = true
-                    navController.navigate("appeal3")
-                   },
+                    appealViewModel.loadAppeals {
+                        navController.navigate("appeal3") {
+                            popUpTo("appeal2") { inclusive = true }
+                        }
+                    }
+                },
         ) {
             Icon(
                 painter = painterResource(lucide.plus),
@@ -218,6 +224,9 @@ fun AppealScreen2(appealRepository: AppealRepository, data: Data, navController:
                     fontSize = 14.sp
                 ),
             )
+        }
+        appealViewModel.errorMessage?.let { message ->
+            Text(text = message, color = Color(0xffFC4F4F))
         }
     }
 }

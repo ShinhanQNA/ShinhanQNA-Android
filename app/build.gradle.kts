@@ -11,6 +11,10 @@ plugins {
     alias(libs.plugins.kotlin.compose)
 }
 
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+}
+
 android {
     namespace = "com.example.shinhan_qna_aos"
     compileSdk = 35
@@ -87,6 +91,8 @@ dependencies {
     implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     implementation("com.google.android.gms:play-services-auth:21.4.0")
+    implementation(platform("com.google.firebase:firebase-bom:34.19.0"))
+    implementation("com.google.firebase:firebase-messaging")
     // Kakao SDK (implementation 버전 확인 필수)
     implementation("com.kakao.sdk:v2-user:2.21.5")  // 사용자 정보, 로그인
     implementation("com.kakao.sdk:v2-auth:2.21.5")  // 로그인

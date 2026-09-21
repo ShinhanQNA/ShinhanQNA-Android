@@ -25,14 +25,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.R
+import com.example.shinhan_qna_aos.info.api.InfoViewModel
 import com.example.shinhan_qna_aos.ui.theme.pretendard
 import com.jihan.lucide_icons.lucide
 
 @Composable
-fun RefuseScreen(data: Data, navController: NavController) {
+fun RefuseScreen(data: Data, infoViewModel: InfoViewModel) {
     Column(
         modifier = Modifier.fillMaxSize()
             .padding(horizontal = 20.dp)
@@ -86,7 +86,7 @@ fun RefuseScreen(data: Data, navController: NavController) {
             modifier = Modifier
                 .background(Color(0xffFC4F4F), RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                .clickable { navController.navigate("info") {popUpTo("refuse"){inclusive=true}}},
+                .clickable { infoViewModel.beginReapplication() },
         ) {
             Icon(
                 painter = painterResource(lucide.user),

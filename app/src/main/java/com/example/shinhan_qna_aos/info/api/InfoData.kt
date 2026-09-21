@@ -8,6 +8,8 @@ data class InfoResponse(
     val message:String,
 )
 
+data class OwnStatusRequest(val status: String)
+
 //API 학생 정보를 multipart 폼으로 제출
 data class InfoData(
     val students: Int = 0,        // 학번

@@ -7,4 +7,5 @@
 -->
 <full-backup-content>
     <exclude domain="sharedpref" path="token_prefs.xml"/>
+    <exclude domain="sharedpref" path="push_notifications.xml"/>
 </full-backup-content>
