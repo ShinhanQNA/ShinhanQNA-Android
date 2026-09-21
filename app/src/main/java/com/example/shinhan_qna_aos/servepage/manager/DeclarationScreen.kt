@@ -157,12 +157,13 @@ fun DeclarationOpenScreen(postId: String, reportId: Int, navController: NavContr
     }
 
     Column(modifier = Modifier.systemBarsPadding().fillMaxSize().background(Color.White)) {
-        TopBar(null) { navController.navigate("declaration") { popUpTo("declaration/${postId}") { inclusive = true } } }
+        TopBar(null) { navController.popBackStack() }
         LazyColumn() {
             item {
                 DetailContent(
                     title = postDetail?.title.toString(),
-                    content = postDetail?.content ?: ""
+                    content = postDetail?.content ?: "",
+                    imagePath = postDetail?.imagePath
                 )
                 Row(
                     modifier = Modifier

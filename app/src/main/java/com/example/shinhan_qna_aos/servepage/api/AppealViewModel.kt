@@ -18,19 +18,26 @@ class AppealViewModel(
     var appeal by mutableStateOf<AppealData?>(null)
         private set
 
+    var errorMessage by mutableStateOf<String?>(null)
+        private set
+
     // 단일 차단 사유 데이터 상태 (null 초기값 허용)
     var blockReasonData by mutableStateOf<BlockReasonData?>(null)
         private set
 
     // 이의 신청 불러오기
-    fun loadAppeals() {
+    fun loadAppeals(onSuccess: () -> Unit) {
         viewModelScope.launch {
+            errorMessage = null
             appealRepository.appeal()
-                .onSuccess { data ->
-                    appeal = data // 내가 쓴 게스글 리스트로 받음
+                .onSuccess { response ->
+                    appeal = response
+                    data.isAppealCompleted = true
+                    onSuccess()
                 }
                 .onFailure {
-                    Log.e("AppealViewModel", "이의신청 목록을 불러오지 못했습니다.")
+                    errorMessage = "이의신청 접수에 실패했습니다."
+                    Log.e("AppealViewModel", "이의신청 접수에 실패했습니다.")
                 }
         }
     }
