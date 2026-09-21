@@ -26,6 +26,7 @@ class Data(private val context: Context) {
         private const val KEY_USER_INFO_SUBMITTED = "USER_INFO_SUBMITTED" // 가입 요청 여부
         private const val KEY_USER_EMAIL = "USER_EMAIL"
         private const val KEY_APPEAL_COMPLETED = "APPEAL_COMPLETED" // 이의신청 완료 여부 추가
+        private const val KEY_REAPPLYING = "REAPPLYING"
         private const val ENCRYPTED_TOKEN_PREFIX = "v1:"
     }
 
@@ -73,6 +74,10 @@ class Data(private val context: Context) {
         get() = prefs.getBoolean(KEY_APPEAL_COMPLETED, false)
         set(value) = prefs.edit().putBoolean(KEY_APPEAL_COMPLETED, value).apply()
 
+    var isReapplying: Boolean
+        get() = prefs.getBoolean(KEY_REAPPLYING, false)
+        set(value) = prefs.edit().putBoolean(KEY_REAPPLYING, value).apply()
+
     // 토큰 저장
     fun saveTokens(
         accessToken: String,
@@ -100,6 +105,7 @@ class Data(private val context: Context) {
         accessTokenExpiresAt = 0
         refreshTokenExpiresAt = 0
         isAdmin = false
+        isReapplying = false
     }
 
     // 재차단 등 상태 변경 시 호출해 이의신청 완료 상태를 초기화 가능

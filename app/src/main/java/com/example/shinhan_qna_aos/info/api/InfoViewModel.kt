@@ -29,6 +29,14 @@ private val data: Data
     private val _navigationRoute = MutableStateFlow<String?>(null)
     val navigationRoute: StateFlow<String?> = _navigationRoute.asStateFlow()
 
+    private val _submitError = MutableStateFlow<String?>(null)
+    val submitError = _submitError.asStateFlow()
+
+    fun beginReapplication() {
+        data.isReapplying = true
+        _navigationRoute.value = "info"
+    }
+
 
     // 이름 변경 시 호출, infoData 내 name 값 갱신
     fun onNameChange(newName: String) {
@@ -66,13 +74,28 @@ private val data: Data
      */
     fun submitStudentInfo(context: Context) {
         viewModelScope.launch {
+            _submitError.value = null
             val imageUri = _uiState.value.imageUri
             val compressedFile = ImageUtils.compressImage(context, imageUri)
-            if (compressedFile == null) return@launch
+            if (compressedFile == null) {
+                _submitError.value = "이미지를 처리하지 못했습니다. 다시 선택해 주세요."
+                return@launch
+            }
 
             val submitResult = infoRepository.submitStudentInfo(_uiState.value, compressedFile)
             if (submitResult.isSuccess) {
-                checkAndNavigateUserStatus()
+                if (data.isReapplying) {
+                    if (infoRepository.requestReapplication().isFailure) {
+                        _submitError.value = "신청 상태 변경에 실패했습니다. 다시 시도해 주세요."
+                        return@launch
+                    }
+                    data.isReapplying = false
+                    _navigationRoute.value = "wait"
+                } else {
+                    checkAndNavigateUserStatus()
+                }
+            } else {
+                _submitError.value = "학생 정보 제출에 실패했습니다. 다시 시도해 주세요."
             }
         }
     }
@@ -89,22 +112,15 @@ private val data: Data
         data.userEmail = user.email
         data.studentCertified = user.studentCertified == true
 
+        if (user.status !in setOf("가입 대기 중", "가입 거절", "거절")) data.isReapplying = false
+
         // 승인 상태이면 이의신청 완료 상태 리셋
         if (user.status == "가입 완료") {
             resetAppealCompleted()
         }
 
         // 화면 분기 결정
-        val destination = when {
-            user.status == "차단" && data.isAppealCompleted -> "appeal3" // 차단 & 이의신청 완료 (승인 전까지)
-            user.status == "차단" -> "appeal1"  // '차단' 상태이지만 이의신청을 하지 않은 상황/재 차단
-            user.status == "경고" -> "main" // 경고인 경우는 그냥 메인으로
-            user.studentCertified == false -> "info"
-            user.status == "가입 완료" -> "main"
-            user.status == "가입 대기 중" -> "wait"
-            user.status == "거절" -> "refuse"
-            else -> "info"
-        }
+        val destination = destinationForUserStatus(user.status, user.studentCertified, data.isAppealCompleted, data.isReapplying)
 
         // 변경 후 (무한 호출 방지)
         if (_navigationRoute.value != destination) {
@@ -141,4 +157,21 @@ private val data: Data
         data.clearAppealCompleted()
     }
 
+}
+
+internal fun destinationForUserStatus(
+    status: String,
+    studentCertified: Boolean?,
+    appealCompleted: Boolean,
+    reapplying: Boolean = false
+): String = when {
+    reapplying && status in setOf("가입 대기 중", "가입 거절", "거절") -> "info"
+    status == "차단" && appealCompleted -> "appeal3"
+    status == "차단" -> "appeal1"
+    status == "경고" -> "main"
+    status == "거절" || status == "가입 거절" -> "refuse"
+    status == "가입 완료" -> "main"
+    status == "가입 대기 중" -> "wait"
+    studentCertified == false -> "info"
+    else -> "info"
 }

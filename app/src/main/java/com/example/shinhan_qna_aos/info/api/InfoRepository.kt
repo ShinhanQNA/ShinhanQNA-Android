@@ -12,6 +12,16 @@ import java.io.File
 
 class InfoRepository(private val apiInterface: APIInterface, private val data:Data) {
 
+    suspend fun requestReapplication(): Result<Unit> {
+        val accessToken = data.accessToken ?: return Result.failure(Exception("로그인 결과가 없습니다."))
+        return runCatching {
+            val response = apiInterface.updateOwnStatus(
+                "Bearer $accessToken", OwnStatusRequest("가입 대기 중")
+            )
+            if (!response.isSuccessful) throw Exception("가입 재신청에 실패했습니다.")
+        }
+    }
+
     // 서버로부터 유저 가입 상태 조회 API 호출
     suspend fun checkUserStatus(): Result<UserResponseWrapper> {
         val accessToken = data.accessToken ?: return Result.failure(Exception("로그인 결과가 없습니다."))

@@ -1,6 +1,7 @@
 package com.example.shinhan_qna_aos.API
 
 import com.example.shinhan_qna_aos.info.api.InfoResponse
+import com.example.shinhan_qna_aos.info.api.OwnStatusRequest
 import com.example.shinhan_qna_aos.info.api.UserResponseWrapper
 import com.example.shinhan_qna_aos.login.api.AdminRequest
 import com.example.shinhan_qna_aos.login.api.LoginTokensResponse
@@ -106,6 +107,12 @@ interface APIInterface {
     suspend fun UserCheck(
         @Header("Authorization") accessToken: String
     ): Response<UserResponseWrapper>
+
+    @PUT("/users/me/status")
+    suspend fun updateOwnStatus(
+        @Header("Authorization") accessToken: String,
+        @Body request: OwnStatusRequest
+    ): Response<Unit>
 
     //게시글 조회
     @Headers("Content-Type: application/json")

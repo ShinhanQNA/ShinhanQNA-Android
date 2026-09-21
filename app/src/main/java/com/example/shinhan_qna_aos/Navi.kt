@@ -185,9 +185,9 @@ fun AppNavigation(
         composable("onboarding") { OnboardingScreen(navController, data) }  // 온보딩
         composable("login") { LoginScreen(authRepository, data, navController) } //로그인
         composable("manager_login") { ManagerLoginScreen(authRepository, navController, data) } // 관리자 로그인 화면
-        composable("info") { InformationScreen(infoRepository, data, navController) } // 학생 정보 입력 화면
+        composable("info") { InformationScreen(infoViewModel) } // 학생 정보 입력 화면
         composable("wait") { WaitScreen(infoRepository, data, navController) } // 가입 대기 화면
-        composable("refuse") { RefuseScreen(data, navController) }
+        composable("refuse") { RefuseScreen(data, infoViewModel) }
         composable( // 메인 화면 선택 사항이 많아서 selectedTab으로 원하는 화면으로 조정 가능
             "main?selectedTab={selectedTab}",
             arguments = listOf(navArgument("selectedTab") {

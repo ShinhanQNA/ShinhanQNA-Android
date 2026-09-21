@@ -32,7 +32,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,44 +48,26 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.R
-import com.example.shinhan_qna_aos.SimpleViewModelFactory
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.LabeledField
 import com.example.shinhan_qna_aos.PlainInputField
-import com.example.shinhan_qna_aos.info.api.InfoRepository
 import com.example.shinhan_qna_aos.info.api.InfoViewModel
 import com.example.shinhan_qna_aos.ui.theme.pretendard
 import com.jihan.lucide_icons.lucide
 import kotlinx.coroutines.delay
 
 @Composable
-fun InformationScreen(infoRepository: InfoRepository, data: Data, navController: NavController) {
+fun InformationScreen(infoViewModel: InfoViewModel) {
     val context = LocalContext.current
-    val infoViewModel: InfoViewModel = viewModel(factory = SimpleViewModelFactory { InfoViewModel(infoRepository, data) })
 
     val uiState by infoViewModel.uiState.collectAsState()
-    val navigationRoute by infoViewModel.navigationRoute.collectAsState()
+    val submitError by infoViewModel.submitError.collectAsState()
     // 드랍시트 관리
     var expandedGrade by remember { mutableStateOf(false) }
     var expandedMajor by remember { mutableStateOf(false) }
 
     // 가입 요청 모든 필드 입력시에만 누를 수 있도록
     val isFormValid = remember(uiState) { uiState.name.isNotBlank() && uiState.students != 0 && uiState.year != 0 && uiState.department.isNotBlank() && uiState.imageUri != Uri.EMPTY }
-
-    // navigationRoute가 변경될 때만 네비게이션 실행 (null 체크 포함)
-    LaunchedEffect(navigationRoute) {
-        navigationRoute?.let { route ->
-            val currentRoute = navController.currentBackStackEntry?.destination?.route
-            if (route.isNotBlank() && currentRoute != route) {
-                navController.navigate(route) {
-                    popUpTo("info") { inclusive = true }
-                }
-            }
-        }
-    }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -165,6 +146,7 @@ fun InformationScreen(infoRepository: InfoRepository, data: Data, navController:
                     infoViewModel.submitStudentInfo(context)
                 },
                 enabled = isFormValid)
+            submitError?.let { Text(it, color = Color(0xffFC4F4F)) }
         }
     }
 }
