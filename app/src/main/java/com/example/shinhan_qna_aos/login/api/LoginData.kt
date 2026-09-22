@@ -84,21 +84,6 @@ internal fun routeForAuthSession(session: AuthSession): String? = when (session)
     is AuthSession.Blocked -> if (session.appealSubmitted) "appeal3" else "appeal1"
 }
 
-// 로그인 결과 표현용
-sealed class LoginResult {
-    data object Idle : LoginResult()
-    data class Success(
-        val accessToken: String,
-        val refreshToken: String,
-        val expiresIn: Int
-    ) : LoginResult()
-
-    data class Failure(
-        val status: Int,
-        val message: String
-    ) : LoginResult()
-}
-
 data class LogoutData(
     val message: String
 )

@@ -17,8 +17,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -34,16 +32,14 @@ import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
-import com.example.shinhan_qna_aos.info.api.InfoRepository
-import com.example.shinhan_qna_aos.info.api.InfoViewModel
 import com.example.shinhan_qna_aos.servepage.api.AppealRepository
 import com.example.shinhan_qna_aos.servepage.api.AppealViewModel
 import com.example.shinhan_qna_aos.ui.theme.pretendard
 import com.jihan.lucide_icons.lucide
 
 @Composable
-fun AppealScreen1(appealRepository: AppealRepository,infoRepository: InfoRepository,data: Data, navController: NavController) {
-    val appealViewModel: AppealViewModel = viewModel(factory = SimpleViewModelFactory { AppealViewModel(appealRepository,data) })
+fun AppealScreen1(appealRepository: AppealRepository, data: Data, navController: NavController) {
+    val appealViewModel: AppealViewModel = viewModel(factory = SimpleViewModelFactory { AppealViewModel(appealRepository) })
 
     // userEmail 안전하게 가져오기 (기본값 or 안내 메시지 할당)
     val userEmail = data.userEmail ?: ""
@@ -142,9 +138,13 @@ fun AppealScreen1(appealRepository: AppealRepository,infoRepository: InfoReposit
 }
 
 @Composable
-fun AppealScreen2(appealRepository: AppealRepository, data: Data, navController: NavController) {
+fun AppealScreen2(
+    appealRepository: AppealRepository,
+    navController: NavController,
+    onAppealSubmitted: () -> Unit
+) {
 
-    val appealViewModel: AppealViewModel = viewModel(factory = SimpleViewModelFactory { AppealViewModel(appealRepository,data) })
+    val appealViewModel: AppealViewModel = viewModel(factory = SimpleViewModelFactory { AppealViewModel(appealRepository) })
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -203,9 +203,7 @@ fun AppealScreen2(appealRepository: AppealRepository, data: Data, navController:
                 .padding(horizontal = 12.dp, vertical = 8.dp)
                 .clickable {
                     appealViewModel.loadAppeals {
-                        navController.navigate("appeal3") {
-                            popUpTo("appeal2") { inclusive = true }
-                        }
+                        onAppealSubmitted()
                     }
                 },
         ) {
@@ -232,25 +230,7 @@ fun AppealScreen2(appealRepository: AppealRepository, data: Data, navController:
 }
 
 @Composable
-fun AppealScreen3(infoRepository: InfoRepository, data: Data, navController: NavController) {
-    val infoViewModel: InfoViewModel = viewModel(factory = SimpleViewModelFactory { InfoViewModel(infoRepository, data)})
-
-   // 현재 네비게이션 경로를 StateFlow에서 수집
-    val navigationRoute by infoViewModel.navigationRoute.collectAsState()
-
-    // 승인, 재차단 등 상태 변화가 감지되면 자동 분기
-    LaunchedEffect(navigationRoute) {
-        navigationRoute?.let { route ->
-            // 현재 라우트와 다르다면 해당 화면으로 이동(예: main, appeal1 등)
-            val currentRoute = navController.currentBackStackEntry?.destination?.route
-            if (route.isNotBlank() && currentRoute != route) {
-                navController.navigate(route) {
-                    popUpTo("appeal3") { inclusive = true }
-                }
-            }
-        }
-    }
-
+fun AppealScreen3(data: Data) {
     Column(
         modifier = Modifier.fillMaxSize()
             .padding(horizontal = 20.dp)

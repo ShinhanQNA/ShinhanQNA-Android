@@ -59,8 +59,6 @@ import com.example.shinhan_qna_aos.servepage.api.WriteData
 import com.example.shinhan_qna_aos.servepage.api.WriteRepository
 import com.example.shinhan_qna_aos.servepage.api.WritingViewModel
 import com.example.shinhan_qna_aos.login.api.AuthRepository
-import com.example.shinhan_qna_aos.login.api.LoginResult
-import com.example.shinhan_qna_aos.login.api.LoginViewModel
 import com.example.shinhan_qna_aos.main.api.PostRepository
 import com.example.shinhan_qna_aos.main.api.PostViewModel
 import com.example.shinhan_qna_aos.main.warningStatusToBanCount

@@ -98,18 +98,6 @@ class Data(private val context: Context) {
     fun isAccessTokenExpired(): Boolean = System.currentTimeMillis() >= accessTokenExpiresAt
     fun isRefreshTokenExpired(): Boolean = System.currentTimeMillis() >= refreshTokenExpiresAt
 
-    //로그아웃 관련
-    fun clearTokens() {
-        accessToken = null
-        refreshToken = null
-        accessTokenExpiresAt = 0
-        refreshTokenExpiresAt = 0
-        isAdmin = false
-        isReapplying = false
-        PushNotificationStore.clear(context)
-        revokeDevicePushToken(context)
-    }
-
     fun clearAccountData() {
         prefs.edit()
             .remove(KEY_ACCESS_TOKEN)
@@ -126,6 +114,17 @@ class Data(private val context: Context) {
             .apply()
         PushNotificationStore.clear(context)
         revokeDevicePushToken(context)
+    }
+
+    fun clearCachedUserState() {
+        prefs.edit()
+            .remove(KEY_USER_STATUS)
+            .remove(KEY_USER_NAME)
+            .remove(KEY_USER_EMAIL)
+            .remove(KEY_USER_INFO_SUBMITTED)
+            .remove(KEY_APPEAL_COMPLETED)
+            .remove(KEY_REAPPLYING)
+            .apply()
     }
 
     // 재차단 등 상태 변경 시 호출해 이의신청 완료 상태를 초기화 가능
