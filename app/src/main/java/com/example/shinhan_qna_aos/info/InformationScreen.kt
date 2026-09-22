@@ -1,7 +1,6 @@
 package com.example.shinhan_qna_aos.info
 
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -54,10 +53,13 @@ import com.example.shinhan_qna_aos.PlainInputField
 import com.example.shinhan_qna_aos.info.api.InfoViewModel
 import com.example.shinhan_qna_aos.ui.theme.pretendard
 import com.jihan.lucide_icons.lucide
-import kotlinx.coroutines.delay
 
 @Composable
-fun InformationScreen(infoViewModel: InfoViewModel) {
+fun InformationScreen(
+    infoViewModel: InfoViewModel,
+    reapplying: Boolean,
+    onSubmitted: (Boolean) -> Unit
+) {
     val context = LocalContext.current
 
     val uiState by infoViewModel.uiState.collectAsState()
@@ -143,7 +145,7 @@ fun InformationScreen(infoViewModel: InfoViewModel) {
             Request(
                 fontSize = 14.sp,
                 onClick = {
-                    infoViewModel.submitStudentInfo(context)
+                    infoViewModel.submitStudentInfo(context, reapplying, onSubmitted)
                 },
                 enabled = isFormValid)
             submitError?.let { Text(it, color = Color(0xffFC4F4F)) }

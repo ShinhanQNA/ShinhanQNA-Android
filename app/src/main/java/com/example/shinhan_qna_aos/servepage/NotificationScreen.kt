@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.ManagerEditDeleteButton
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
@@ -48,7 +47,7 @@ import com.example.shinhan_qna_aos.ui.theme.pretendard
 import com.jihan.lucide_icons.lucide
 
 @Composable
-fun NotificationScreen(data: Data, notificationRepository: NotificationRepository, navController: NavController) {
+fun NotificationScreen(isAdmin: Boolean, notificationRepository: NotificationRepository, navController: NavController) {
 
     val notificationViewModel:NotificationViewModel =
         viewModel(factory = SimpleViewModelFactory { NotificationViewModel(notificationRepository) })
@@ -81,7 +80,7 @@ fun NotificationScreen(data: Data, notificationRepository: NotificationRepositor
                 }
             }
 
-            if(data.isAdmin){// + 새공지 버튼 - 배너 바로 위 공간에 위치하도록 아래 패딩 추가
+            if(isAdmin){// + 새공지 버튼 - 배너 바로 위 공간에 위치하도록 아래 패딩 추가
                 Button(
                     onClick = { navController.navigate("notices_write") },
                     shape = RoundedCornerShape(6.dp),
@@ -128,7 +127,7 @@ fun NotificationScreen(data: Data, notificationRepository: NotificationRepositor
 }
 
 @Composable
-fun NotificationOpenScreen(id:Int,data: Data ,notificationRepository: NotificationRepository, navController: NavController) {
+fun NotificationOpenScreen(id:Int, isAdmin: Boolean, notificationRepository: NotificationRepository, navController: NavController) {
     val notificationViewModel: NotificationViewModel =
         viewModel(factory = SimpleViewModelFactory { NotificationViewModel(notificationRepository) })
 
@@ -164,7 +163,7 @@ fun NotificationOpenScreen(id:Int,data: Data ,notificationRepository: Notificati
                         title = selectedNotices?.title ?: "",
                         content = selectedNotices?.content ?: ""
                     )
-                    if (data.isAdmin) {
+                    if (isAdmin) {
                         ManagerEditDeleteButton(
                             onDeleteClick = {
                                 notificationViewModel.deleteNotices(id)

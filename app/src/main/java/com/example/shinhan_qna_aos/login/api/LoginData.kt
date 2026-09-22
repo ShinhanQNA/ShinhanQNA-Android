@@ -28,19 +28,60 @@ data class ManagerLoginData(
     val managerPassword: String = ""
 )
 
-// 로그인 결과 표현용
-sealed class LoginResult {
-    data object Idle : LoginResult()
-    data class Success(
-        val accessToken: String,
-        val refreshToken: String,
-        val expiresIn: Int
-    ) : LoginResult()
+data class AuthState(
+    val session: AuthSession = AuthSession.Checking,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+) {
+    val isAuthenticated: Boolean
+        get() = session !is AuthSession.Checking && session !is AuthSession.SignedOut
 
-    data class Failure(
-        val status: Int,
-        val message: String
-    ) : LoginResult()
+    val isAdmin: Boolean
+        get() = session is AuthSession.Admin
+
+    val canOpenNotifications: Boolean
+        get() = session is AuthSession.Active ||
+            session is AuthSession.Warned ||
+            session is AuthSession.Admin
+}
+
+sealed interface AuthSession {
+    data object Checking : AuthSession
+    data object SignedOut : AuthSession
+    data object NeedsStudentInfo : AuthSession
+    data object Pending : AuthSession
+    data object Rejected : AuthSession
+    data object Reapplying : AuthSession
+    data object Active : AuthSession
+    data object Warned : AuthSession
+    data class Blocked(val appealSubmitted: Boolean) : AuthSession
+    data object Admin : AuthSession
+}
+
+internal fun authSessionForUser(
+    status: String,
+    studentCertified: Boolean?,
+    appealCompleted: Boolean,
+    reapplying: Boolean = false
+): AuthSession = when {
+    reapplying && status in setOf("가입 대기 중", "가입 거절", "거절") -> AuthSession.Reapplying
+    status == "차단" -> AuthSession.Blocked(appealCompleted)
+    status == "경고" -> AuthSession.Warned
+    status == "거절" || status == "가입 거절" -> AuthSession.Rejected
+    status == "가입 완료" -> AuthSession.Active
+    status == "가입 대기 중" -> AuthSession.Pending
+    studentCertified == false -> AuthSession.NeedsStudentInfo
+    else -> AuthSession.NeedsStudentInfo
+}
+
+internal fun routeForAuthSession(session: AuthSession): String? = when (session) {
+    AuthSession.Checking -> null
+    AuthSession.SignedOut -> "login"
+    AuthSession.NeedsStudentInfo, AuthSession.Reapplying -> "info"
+    AuthSession.Pending -> "wait"
+    AuthSession.Rejected -> "refuse"
+    AuthSession.Active, AuthSession.Warned, AuthSession.Admin -> "main"
+    is AuthSession.Blocked -> if (session.appealSubmitted) "appeal3" else "appeal1"
 }
 
 data class LogoutData(

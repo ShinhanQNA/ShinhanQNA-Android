@@ -29,7 +29,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,9 +57,6 @@ import com.example.shinhan_qna_aos.PlainInputField
 import com.example.shinhan_qna_aos.servepage.api.WriteData
 import com.example.shinhan_qna_aos.servepage.api.WriteRepository
 import com.example.shinhan_qna_aos.servepage.api.WritingViewModel
-import com.example.shinhan_qna_aos.login.api.AuthRepository
-import com.example.shinhan_qna_aos.login.api.LoginResult
-import com.example.shinhan_qna_aos.login.api.LoginViewModel
 import com.example.shinhan_qna_aos.main.api.PostRepository
 import com.example.shinhan_qna_aos.main.api.PostViewModel
 import com.example.shinhan_qna_aos.main.warningStatusToBanCount
@@ -73,6 +69,7 @@ fun WriteOpenScreen(
     postRepository: PostRepository,
     writeRepository: WriteRepository,
     data: Data,
+    isAdmin: Boolean,
     postId: String,
 ) {
     val context = LocalContext.current
@@ -129,9 +126,9 @@ fun WriteOpenScreen(
                         item {
                             DetailContent(detail.title, detail.content, detail.imagePath)
                             Spacer(modifier = Modifier.height(16.dp))
-                            LikeFlagBan(detail.likes, detail.reportCount, warningStatusToBanCount(detail.warningStatus).toInt(), data)
+                            LikeFlagBan(detail.likes, detail.reportCount, warningStatusToBanCount(detail.warningStatus).toInt(), isAdmin)
                             Spacer(modifier = Modifier.height(36.dp))
-                            if (data.isAdmin) {
+                            if (isAdmin) {
                                 ManagerFunctionButton(
                                     onDeleteClick = {
                                         debugLog("WriteOpenScreen", "삭제 버튼을 눌렀습니다.")

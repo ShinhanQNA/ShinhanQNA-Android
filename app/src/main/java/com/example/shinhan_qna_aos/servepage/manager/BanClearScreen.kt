@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.LikeFlagBan
 import com.example.shinhan_qna_aos.ManagerStudentInfo
@@ -242,7 +241,7 @@ fun BanClearDetailScreen(
 }
 
 @Composable
-fun BanClearPostScreen(banClearRepository: BanClearRepository, navController: NavController, email : String, postId : Int, data: Data){
+fun BanClearPostScreen(banClearRepository: BanClearRepository, navController: NavController, email : String, postId : Int, isAdmin: Boolean){
     val banClearViewModel: BanClearViewModel = viewModel(factory = SimpleViewModelFactory { BanClearViewModel(banClearRepository) })
 
     LaunchedEffect(email, postId) {
@@ -266,7 +265,7 @@ fun BanClearPostScreen(banClearRepository: BanClearRepository, navController: Na
                         it.likes,
                         post.reportCount,
                         warningStatusToBanCount(post.warningStatus).toInt(),
-                        data
+                        isAdmin
                     )
                 }
             }

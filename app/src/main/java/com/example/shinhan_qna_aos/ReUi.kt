@@ -44,7 +44,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.shinhan_qna_aos.main.api.TitleContentLike
 import com.example.shinhan_qna_aos.ui.theme.pretendard
 import com.jihan.lucide_icons.lucide
 
@@ -503,7 +502,7 @@ fun ManagerStudentInfo(title: String, info: String, modifier: Modifier = Modifie
 }
 // 좋아요, 신고, 차단 아이콘과 카운트 컴포저블
 @Composable
-fun LikeFlagBan(likeCount: Int, flagsCount: Int, banCount: Int, data:Data) {
+fun LikeFlagBan(likeCount: Int, flagsCount: Int, banCount: Int, isAdmin: Boolean) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -514,7 +513,7 @@ fun LikeFlagBan(likeCount: Int, flagsCount: Int, banCount: Int, data:Data) {
     ) {
 
             InfoIconCount(lucide.thumbs, "좋아요 표시", likeCount, Color.Black, 14)
-        if(data.isAdmin) {
+        if(isAdmin) {
             InfoIconCount(R.drawable.flag, "신고 표시", flagsCount, Color(0xffFF9F43), 14)
             InfoIconCount(lucide.ban, "차단 표시", banCount, Color(0xffFC4F4F), 14)
         }

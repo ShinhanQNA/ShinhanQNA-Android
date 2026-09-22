@@ -27,12 +27,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.R
-import com.example.shinhan_qna_aos.info.api.InfoViewModel
 import com.example.shinhan_qna_aos.ui.theme.pretendard
 import com.jihan.lucide_icons.lucide
 
 @Composable
-fun RefuseScreen(data: Data, infoViewModel: InfoViewModel) {
+fun RefuseScreen(data: Data, onReapply: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize()
             .padding(horizontal = 20.dp)
@@ -86,7 +85,7 @@ fun RefuseScreen(data: Data, infoViewModel: InfoViewModel) {
             modifier = Modifier
                 .background(Color(0xffFC4F4F), RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                .clickable { infoViewModel.beginReapplication() },
+                .clickable(onClick = onReapply),
         ) {
             Icon(
                 painter = painterResource(lucide.user),

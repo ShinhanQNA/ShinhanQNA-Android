@@ -37,10 +37,11 @@ import com.example.shinhan_qna_aos.info.InformationScreen
 import com.example.shinhan_qna_aos.info.WaitScreen
 import com.example.shinhan_qna_aos.info.api.InfoViewModel
 import com.example.shinhan_qna_aos.login.api.AuthRepository
+import com.example.shinhan_qna_aos.login.api.AuthSession
+import com.example.shinhan_qna_aos.login.api.AuthViewModel
 import com.example.shinhan_qna_aos.login.LoginScreen
-import com.example.shinhan_qna_aos.login.api.LoginViewModel
 import com.example.shinhan_qna_aos.login.ManagerLoginScreen
-import com.example.shinhan_qna_aos.login.api.LoginResult
+import com.example.shinhan_qna_aos.login.api.routeForAuthSession
 import com.example.shinhan_qna_aos.main.AnsweredOpenScreen
 import com.example.shinhan_qna_aos.main.AnsweredScreen
 import com.example.shinhan_qna_aos.main.MainScreen
@@ -70,11 +71,6 @@ import com.example.shinhan_qna_aos.servepage.manager.api.AccessionRepository
 import com.example.shinhan_qna_aos.servepage.manager.api.BanClearRepository
 import com.example.shinhan_qna_aos.servepage.manager.api.DeclarationRepository
 import com.example.shinhan_qna_aos.servepage.user.RefuseScreen
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -99,70 +95,42 @@ fun AppNavigation(
     val accessionRepository = remember{ AccessionRepository(data, apiInterface) }
     val banClearRepository = remember { BanClearRepository(apiInterface, data) }
 
-    val loginViewModel: LoginViewModel =
-        viewModel(factory = SimpleViewModelFactory { LoginViewModel(authRepository, data) })
+    val authViewModel: AuthViewModel =
+        viewModel(factory = SimpleViewModelFactory { AuthViewModel(authRepository, infoRepository, data) })
     val infoViewModel: InfoViewModel =
-        viewModel(factory = SimpleViewModelFactory { InfoViewModel(infoRepository, data) })
+        viewModel(factory = SimpleViewModelFactory { InfoViewModel(infoRepository) })
     val alarmViewModel: AlarmViewModel =
         viewModel(factory = SimpleViewModelFactory { AlarmViewModel(context) })
     val pushTokenRegistrar = remember { PushTokenRegistrar(context.applicationContext, apiInterface, data) }
 
-    val loginResult by loginViewModel.loginResult.collectAsState()
+    val authState by authViewModel.state.collectAsState()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     var handledNotificationEvent by remember { mutableStateOf<Long?>(null) }
+    val authRoute = if (data.onboarding) "onboarding" else routeForAuthSession(authState.session)
 
-    // 라우트 변경 감시 → 네비게이션 처리 (여기서만!)
-    val navigationRoute by infoViewModel.navigationRoute.collectAsState()
-
-    LaunchedEffect(loginResult) {
-        if (loginResult is LoginResult.Success) pushTokenRegistrar.syncCurrentToken()
+    LaunchedEffect(authState.session) {
+        if (authState.isAuthenticated) pushTokenRegistrar.syncCurrentToken()
     }
 
-    LaunchedEffect(notificationLaunch, loginResult, navigationRoute, currentBackStackEntry) {
+    LaunchedEffect(notificationLaunch, authState.session, currentBackStackEntry) {
         val launch = notificationLaunch ?: return@LaunchedEffect
-        if (handledNotificationEvent == launch.eventId || loginResult !is LoginResult.Success) return@LaunchedEffect
-        if (navigationRoute != null && navigationRoute != "main" && !data.isAdmin) {
+        if (handledNotificationEvent == launch.eventId || !authState.isAuthenticated) return@LaunchedEffect
+        if (!authState.canOpenNotifications) {
             handledNotificationEvent = launch.eventId
             return@LaunchedEffect
         }
         val currentRoute = currentBackStackEntry?.destination?.route ?: return@LaunchedEffect
         if (data.onboarding || currentRoute == "login" || currentRoute == "onboarding") return@LaunchedEffect
-        if (navigationRoute == "main" || data.isAdmin) {
-            navController.navigate(launch.route ?: "alarm") { launchSingleTop = true }
-            alarmViewModel.markRead(launch.key)
-            handledNotificationEvent = launch.eventId
-        }
+        navController.navigate(launch.route ?: "alarm") { launchSingleTop = true }
+        alarmViewModel.markRead(launch.key)
+        handledNotificationEvent = launch.eventId
     }
 
     // 앱 최초 진입 시 빠르게 보여줄 초기 화면 결정용 상태
     var initialRoute by remember { mutableStateOf<String?>(null) }
 
-    // 유저 상태 검사를 한 번만 실행했는지 추적하는 플래그
-    var isInitialStatusChecked by remember { mutableStateOf(false) }
-
-    // 앱 최초 진입 시 로그인 결과에 따라 초기 화면 결정
-    LaunchedEffect(loginResult) {
-        if (data.onboarding) {
-            initialRoute = "onboarding"
-        } else if (loginResult is LoginResult.Success) {
-            if (data.isAdmin) {
-                initialRoute = "main"
-            }
-            else if (!isInitialStatusChecked) { // 최초 1회만 유저 상태 확인 호출
-                debugLog("AppNavigation", "로그인 성공을 확인했습니다.")
-                infoViewModel.checkAndNavigateUserStatus()
-                isInitialStatusChecked = true
-            }
-        } else {
-            initialRoute = "login"
-        }
-    }
-
-    // navigationRoute가 변경되면 화면 전환
-    // 초기 경로가 확정되지 않았을 때만 initialRoute를 설정하고,
-    // 이미 메인 화면에 진입한 후에는 navigate를 호출
-    LaunchedEffect(navigationRoute) {
-        navigationRoute?.let { route ->
+    LaunchedEffect(authRoute) {
+        authRoute?.let { route ->
             if (initialRoute == null) {
                 initialRoute = route
                 debugLog("AppNavigation", "초기 화면 경로를 설정했습니다.")
@@ -175,31 +143,18 @@ fun AppNavigation(
         }
     }
 
-    // 앱 재개 시 및 1분마다 주기적으로 상태 확인
-    // 이 로직을 AppNavigation에서 단독으로 관리하여 중복 호출 제거
     DisposableEffect(Unit) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                loginViewModel.tryRefreshTokenIfNeeded()
-                infoViewModel.checkAndNavigateUserStatus()
+                authViewModel.onAppResumed()
                 debugLog("Lifecycle", "앱이 다시 활성화되었습니다.")
             }
         }
 
         lifecycleOwner.lifecycle.addObserver(observer)
 
-        val job = CoroutineScope(Dispatchers.Default).launch {
-            while (isActive) {
-                delay(60_000) // 60초
-                loginViewModel.tryRefreshTokenIfNeeded()
-                infoViewModel.checkAndNavigateUserStatus()
-                debugLog("PeriodicCheck", "사용자 상태를 정기 확인합니다.")
-            }
-        }
-
         onDispose {
             lifecycleOwner.lifecycle.removeObserver(observer)
-            job.cancel()
         }
     }
 
@@ -211,11 +166,30 @@ fun AppNavigation(
         startDestination = initialRoute!!
     ) {
         composable("onboarding") { OnboardingScreen(navController, data) }  // 온보딩
-        composable("login") { LoginScreen(authRepository, data, navController) } //로그인
-        composable("manager_login") { ManagerLoginScreen(authRepository, navController, data) } // 관리자 로그인 화면
-        composable("info") { InformationScreen(infoViewModel) } // 학생 정보 입력 화면
-        composable("wait") { WaitScreen(infoRepository, data, navController) } // 가입 대기 화면
-        composable("refuse") { RefuseScreen(data, infoViewModel) }
+        composable("login") {
+            LoginScreen(
+                onKakaoLogin = authViewModel::loginWithKakao,
+                onGoogleLogin = authViewModel::loginWithGoogle,
+                onManagerLogin = { navController.navigate("manager_login") }
+            )
+        }
+        composable("manager_login") {
+            ManagerLoginScreen(
+                state = authViewModel.managerLoginData,
+                onIdChange = authViewModel::onAdminIdChange,
+                onPasswordChange = authViewModel::onAdminPasswordChange,
+                onLogin = authViewModel::loginAdmin
+            )
+        }
+        composable("info") {
+            InformationScreen(
+                infoViewModel = infoViewModel,
+                reapplying = authState.session is AuthSession.Reapplying,
+                onSubmitted = authViewModel::onStudentInfoSubmitted
+            )
+        }
+        composable("wait") { WaitScreen(data) }
+        composable("refuse") { RefuseScreen(data, authViewModel::beginReapplication) }
         composable( // 메인 화면 선택 사항이 많아서 selectedTab으로 원하는 화면으로 조정 가능
             "main?selectedTab={selectedTab}",
             arguments = listOf(navArgument("selectedTab") {
@@ -228,8 +202,7 @@ fun AppNavigation(
                 postRepository = postRepository,
                 answerRepository = answerRepository,
                 twPostRepository = twPostRepository,
-                infoRepository = infoRepository,
-                data = data,
+                isAdmin = authState.isAdmin,
                 navController = navController,
                 initialSelectedIndex = selectedTab
             )
@@ -239,10 +212,10 @@ fun AppNavigation(
             arguments = listOf(navArgument("postId") { type = NavType.StringType })
         ) { backStackEntry ->
             val postId = backStackEntry.arguments?.getString("postId") ?: ""
-            WriteOpenScreen(navController, postRepository, writeRepository, data, postId)
+            WriteOpenScreen(navController, postRepository, writeRepository, data, authState.isAdmin, postId)
         }
 
-        composable("writeBoard") { WritingScreen(writeRepository,answerRepository ,navController, data) } // 게시글 작성 화면
+        composable("writeBoard") { WritingScreen(writeRepository, answerRepository, navController, authState.isAdmin) }
         composable("answer") { AnsweredScreen(answerRepository, navController) } // 답변 화면
 
         composable( // 답변 상세 화면
@@ -250,7 +223,7 @@ fun AppNavigation(
             arguments = listOf(navArgument("id") { type = NavType.IntType })
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getInt("id") ?: -1
-            AnsweredOpenScreen(answerRepository, navController,data, id)
+            AnsweredOpenScreen(answerRepository, navController, authState.isAdmin, id)
         }
 
         composable( // 3주차 게시판 리스트로 있음
@@ -270,28 +243,28 @@ fun AppNavigation(
             SelectedDetailScreen(groupId , twPostRepository, navController, id)
         }
 
-        composable("myPage") { MypageScreen(authRepository, data, navController) } // 마이페이지
-        composable("manager_myPage"){ ManagerScreen(navController, authRepository, data) } // 관리자 마이페이지
+        composable("myPage") { MypageScreen(navController, authViewModel::logout, authViewModel::cancelMember) }
+        composable("manager_myPage"){ ManagerScreen(navController, authViewModel::logout) }
 
         composable("my_page_write") { MyWriteScreen(postRepository, navController) } // 내가 작성한 게시글
 
-        composable("notices") { NotificationScreen(data, notificationRepository, navController) } // 공지 화면
+        composable("notices") { NotificationScreen(authState.isAdmin, notificationRepository, navController) }
         composable( // 공지 상세 화면
             "notices/{id}",
             arguments = listOf(navArgument("id") { type = NavType.IntType })
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getInt("id") ?: -1
-            NotificationOpenScreen(id,data ,notificationRepository, navController)
+            NotificationOpenScreen(id, authState.isAdmin, notificationRepository, navController)
         }
         composable("notices_write"){ NotificationWriteScreen(notificationRepository, navController) } // 관리자 공지 작성 화면
 
         composable("alarm") { AlarmScreen(navController, alarmViewModel) }
 
-        composable("appeal1"){ AppealScreen1(appealRepository, infoRepository, data, navController) } // 차단 당했을 경우 사용자 제한 화면으로 appeal3까지 세트
-        composable("appeal2"){ AppealScreen2(appealRepository, data, navController) }
-        composable("appeal3"){ AppealScreen3(infoRepository, data, navController) }
+        composable("appeal1"){ AppealScreen1(appealRepository, data, navController) }
+        composable("appeal2"){ AppealScreen2(appealRepository, navController, authViewModel::onAppealSubmitted) }
+        composable("appeal3"){ AppealScreen3(data) }
 
-        composable("declaration") { DeclarationScreen(declarationRepository,postRepository,data,navController) } // 신고된 게시글
+        composable("declaration") { DeclarationScreen(declarationRepository, postRepository, authState.isAdmin, navController) }
         composable( // 신고된 게시글 상세
             "declaration/{postId}/{reportId}",
             arguments = listOf(
@@ -321,7 +294,7 @@ fun AppNavigation(
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
             val postId = backStackEntry.arguments?.getString("postId") ?: ""
-            BanClearPostScreen(banClearRepository, navController, email, postId.toInt(), data)
+            BanClearPostScreen(banClearRepository, navController, email, postId.toInt(), authState.isAdmin)
         }
     }
 }

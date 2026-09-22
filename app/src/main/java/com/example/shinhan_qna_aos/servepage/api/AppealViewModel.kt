@@ -6,12 +6,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.shinhan_qna_aos.Data
 import kotlinx.coroutines.launch
 
 class AppealViewModel(
-    private val appealRepository: AppealRepository,
-    private val data: Data
+    private val appealRepository: AppealRepository
 ) : ViewModel() {
 
     // 게시글 목록 상태
@@ -32,7 +30,6 @@ class AppealViewModel(
             appealRepository.appeal()
                 .onSuccess { response ->
                     appeal = response
-                    data.isAppealCompleted = true
                     onSuccess()
                 }
                 .onFailure {
