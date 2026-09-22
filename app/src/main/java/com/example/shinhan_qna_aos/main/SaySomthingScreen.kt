@@ -18,7 +18,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.TitleContentCountButton
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.main.api.PostRepository
 import com.example.shinhan_qna_aos.main.api.PostViewModel
 import kotlinx.coroutines.Job
@@ -27,7 +26,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 @Composable
-fun SaySomthingScreen(postRepository: PostRepository, data: Data, navController:NavController) {
+fun SaySomthingScreen(postRepository: PostRepository, isAdmin: Boolean, navController:NavController) {
     val postViewModel: PostViewModel =
         viewModel(factory = SimpleViewModelFactory { PostViewModel(postRepository) })
 
@@ -72,7 +71,7 @@ fun SaySomthingScreen(postRepository: PostRepository, data: Data, navController:
                 title = board.title,
                 content = board.content,
                 likeCount = board.likeCount,
-                isAdmin = data.isAdmin,
+                isAdmin = isAdmin,
                 flagsCount = board.flagsCount,
                 banCount = board.banCount.toInt(),
                 onClick = { navController.navigate("writeOpen/${board.postID}") }

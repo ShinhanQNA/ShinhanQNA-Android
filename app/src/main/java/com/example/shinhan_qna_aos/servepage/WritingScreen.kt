@@ -44,7 +44,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.TopBar
 import com.example.shinhan_qna_aos.servepage.api.WriteRepository
@@ -55,7 +54,12 @@ import com.example.shinhan_qna_aos.ui.theme.pretendard
 import com.jihan.lucide_icons.lucide
 
 @Composable
-fun WritingScreen(writeRepository: WriteRepository, answerRepository: AnswerRepository, navController: NavController, data: Data) {
+fun WritingScreen(
+    writeRepository: WriteRepository,
+    answerRepository: AnswerRepository,
+    navController: NavController,
+    isAdmin: Boolean
+) {
     val context = LocalContext.current
     val writingViewModel: WritingViewModel =
         viewModel(factory = SimpleViewModelFactory { WritingViewModel(writeRepository) })
@@ -87,22 +91,22 @@ fun WritingScreen(writeRepository: WriteRepository, answerRepository: AnswerRepo
             ) {
                 item {
                     WritingTitleField(
-                        value = if (data.isAdmin) answerstae.title else state.title,
-                        onValueChange = if(data.isAdmin) answerViewModel::onTitleChange else writingViewModel::onTitleChange,
+                        value = if (isAdmin) answerstae.title else state.title,
+                        onValueChange = if(isAdmin) answerViewModel::onTitleChange else writingViewModel::onTitleChange,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
                 item {
                     WritingContentField(
-                        value = if (data.isAdmin) answerstae.content else state.content,
-                        onValueChange = if(data.isAdmin) answerViewModel::onContentChange else writingViewModel::onContentChange,
+                        value = if (isAdmin) answerstae.content else state.content,
+                        onValueChange = if(isAdmin) answerViewModel::onContentChange else writingViewModel::onContentChange,
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Normal
                     )
                 }
                 item {
-                    if (!data.isAdmin) {
+                    if (!isAdmin) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -147,7 +151,7 @@ fun WritingScreen(writeRepository: WriteRepository, answerRepository: AnswerRepo
                 .background(Color.Black, RoundedCornerShape(12.dp))
                 .padding(horizontal = 18.dp, vertical = 12.dp)
                 .clickable {
-                    if (data.isAdmin) {
+                    if (isAdmin) {
                         answerViewModel.writeAnswer(
                             onSusscess = {
                                 navController.navigate("main?selectedTab=2") {

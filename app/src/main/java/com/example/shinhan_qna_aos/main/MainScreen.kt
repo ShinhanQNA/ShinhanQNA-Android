@@ -39,7 +39,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.main.api.AnswerRepository
 import com.example.shinhan_qna_aos.main.api.PostRepository
@@ -53,7 +52,7 @@ fun MainScreen(
     postRepository: PostRepository,
     answerRepository: AnswerRepository,
     twPostRepository: TWPostRepository,
-    data: Data,
+    isAdmin: Boolean,
     navController: NavController,
     initialSelectedIndex: Int = 0
 ){
@@ -63,12 +62,12 @@ fun MainScreen(
         .fillMaxSize()
         .systemBarsPadding()){
         Column{
-            MainTopbar(navController, data)
+            MainTopbar(navController, isAdmin)
             Selectboard(
                 postRepository = postRepository,
                 answerRepository = answerRepository,
                 twPostRepository = twPostRepository,
-                data = data,
+                isAdmin = isAdmin,
                 navController = navController,
                 selectedIndex = selectedIndex,
                 onTabSelected = { idx -> selectedIndex = idx }
@@ -87,7 +86,7 @@ fun MainScreen(
 
 // 서브 선택
 @Composable
-fun MainTopbar(navController: NavController, data: Data){
+fun MainTopbar(navController: NavController, isAdmin: Boolean){
     Row(
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
@@ -100,13 +99,13 @@ fun MainTopbar(navController: NavController, data: Data){
             modifier = Modifier.size(28.dp),
             contentDescription = null
         )
-        TopIcon(navController, data)
+        TopIcon(navController, isAdmin)
     }
 }
 
 // 서브 선택
 @Composable
-fun TopIcon(navController: NavController, data: Data){
+fun TopIcon(navController: NavController, isAdmin: Boolean){
     Row(horizontalArrangement = Arrangement.spacedBy(16.dp)){
         Box(
             modifier = Modifier
@@ -152,7 +151,7 @@ fun TopIcon(navController: NavController, data: Data){
                 .border(1.dp, color = Color(0xffDFDFDF), RoundedCornerShape(10.dp))
                 .padding(6.dp)
                 .clickable {
-                    if(data.isAdmin){
+                    if(isAdmin){
                         navController.navigate("manager_myPage")
                     }else {
                         navController.navigate("mypage")
@@ -160,7 +159,7 @@ fun TopIcon(navController: NavController, data: Data){
                 }
         ){
             Icon(
-                painter = painterResource(if(data.isAdmin)R.drawable.shield_user else lucide.user),
+                painter = painterResource(if(isAdmin)R.drawable.shield_user else lucide.user),
                 contentDescription = null,
                 tint = Color.Black,
                 modifier = Modifier.size(16.dp)
@@ -176,7 +175,7 @@ fun Selectboard(
     postRepository: PostRepository,
     answerRepository: AnswerRepository,
     twPostRepository: TWPostRepository,
-    data: Data,
+    isAdmin: Boolean,
     navController: NavController,
     selectedIndex: Int,
     onTabSelected: (Int) -> Unit
@@ -249,8 +248,8 @@ fun Selectboard(
         }
 
         when (selectedIndex) {
-            0 -> SaySomthingScreen(postRepository, data, navController)
-            1 -> SelectedOpinionsScreen(twPostRepository, data, navController)
+            0 -> SaySomthingScreen(postRepository, isAdmin, navController)
+            1 -> SelectedOpinionsScreen(twPostRepository, isAdmin, navController)
             2 -> AnsweredScreen(answerRepository, navController)
         }
     }

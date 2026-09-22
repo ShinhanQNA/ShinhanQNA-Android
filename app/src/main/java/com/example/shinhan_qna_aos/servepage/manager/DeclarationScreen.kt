@@ -31,7 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -45,12 +44,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.PlainInputField
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.TitleContentCountButton
-import com.example.shinhan_qna_aos.TitleContentLikeButton
 import com.example.shinhan_qna_aos.main.api.PostRepository
 import com.example.shinhan_qna_aos.main.api.PostViewModel
 import com.example.shinhan_qna_aos.servepage.manager.api.DeclarationRepository
@@ -62,7 +59,7 @@ import com.example.shinhan_qna_aos.ui.theme.pretendard
 fun DeclarationScreen(
     declarationRepository: DeclarationRepository,
     postRepository: PostRepository,
-    data: Data,
+    isAdmin: Boolean,
     navController: NavController
 ) {
     val declarationViewModel: DeclarationViewModel = viewModel(factory = SimpleViewModelFactory {DeclarationViewModel(declarationRepository)})
@@ -109,7 +106,7 @@ fun DeclarationScreen(
                         title = item.title,
                         content = item.content,
                         likeCount = item.likeCount,
-                        isAdmin = data.isAdmin,
+                        isAdmin = isAdmin,
                         flagsCount = item.flagsCount,
                         banCount = item.banCount,
                         onClick = { navController.navigate("declaration/${item.postID}/${item.reportId}") }

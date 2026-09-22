@@ -1,6 +1,5 @@
 package com.example.shinhan_qna_aos.main
 
-import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -43,7 +42,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.debugLog
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.ManagerEditDeleteButton
@@ -120,7 +118,7 @@ fun AnsweredScreen(answerRepository: AnswerRepository, navController: NavControl
 fun AnsweredOpenScreen(
     answerRepository: AnswerRepository,
     navController: NavController,
-    data: Data,
+    isAdmin: Boolean,
     id: Int
 ) {
     val answerViewModel: AnswerViewModel =
@@ -174,7 +172,7 @@ fun AnsweredOpenScreen(
                         item {
                             DetailContent(title = answer.title, content = answer.content)
 
-                            if (data.isAdmin) {
+                            if (isAdmin) {
                                 ManagerEditDeleteButton(
                                     onDeleteClick = {
                                         debugLog("AnswerScreen", "삭제 버튼을 눌렀습니다.")

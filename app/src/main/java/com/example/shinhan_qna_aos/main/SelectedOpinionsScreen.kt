@@ -51,7 +51,6 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.InfoIconCount
 import com.example.shinhan_qna_aos.SelectDataButton
@@ -70,7 +69,7 @@ import java.time.LocalDate
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun SelectedOpinionsScreen(twPostRepository: TWPostRepository, data: Data, navController: NavController) {
+fun SelectedOpinionsScreen(twPostRepository: TWPostRepository, isAdmin: Boolean, navController: NavController) {
     val twPostViewModel: TWPostViewModel =
         viewModel(factory = SimpleViewModelFactory { TWPostViewModel(twPostRepository) })
 
@@ -118,7 +117,7 @@ fun SelectedOpinionsScreen(twPostRepository: TWPostRepository, data: Data, navCo
                 year = LocalDate.now().year,
                 month = opinion.selectedMonth,
                 week = 3,
-                isAdmin = data.isAdmin,
+                isAdmin = isAdmin,
                 responseState = opinion.responseStatus,
                 onResponseStateChange = { newStatus ->
                     // 상태 변경 시 ViewModel에 API 호출

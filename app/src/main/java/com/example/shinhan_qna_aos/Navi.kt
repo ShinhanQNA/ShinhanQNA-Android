@@ -202,7 +202,7 @@ fun AppNavigation(
                 postRepository = postRepository,
                 answerRepository = answerRepository,
                 twPostRepository = twPostRepository,
-                data = data,
+                isAdmin = authState.isAdmin,
                 navController = navController,
                 initialSelectedIndex = selectedTab
             )
@@ -212,10 +212,10 @@ fun AppNavigation(
             arguments = listOf(navArgument("postId") { type = NavType.StringType })
         ) { backStackEntry ->
             val postId = backStackEntry.arguments?.getString("postId") ?: ""
-            WriteOpenScreen(navController, postRepository, writeRepository, data, postId)
+            WriteOpenScreen(navController, postRepository, writeRepository, data, authState.isAdmin, postId)
         }
 
-        composable("writeBoard") { WritingScreen(writeRepository, answerRepository, navController, data) }
+        composable("writeBoard") { WritingScreen(writeRepository, answerRepository, navController, authState.isAdmin) }
         composable("answer") { AnsweredScreen(answerRepository, navController) } // 답변 화면
 
         composable( // 답변 상세 화면
@@ -223,7 +223,7 @@ fun AppNavigation(
             arguments = listOf(navArgument("id") { type = NavType.IntType })
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getInt("id") ?: -1
-            AnsweredOpenScreen(answerRepository, navController, data, id)
+            AnsweredOpenScreen(answerRepository, navController, authState.isAdmin, id)
         }
 
         composable( // 3주차 게시판 리스트로 있음
@@ -248,13 +248,13 @@ fun AppNavigation(
 
         composable("my_page_write") { MyWriteScreen(postRepository, navController) } // 내가 작성한 게시글
 
-        composable("notices") { NotificationScreen(data, notificationRepository, navController) }
+        composable("notices") { NotificationScreen(authState.isAdmin, notificationRepository, navController) }
         composable( // 공지 상세 화면
             "notices/{id}",
             arguments = listOf(navArgument("id") { type = NavType.IntType })
         ) { backStackEntry ->
             val id = backStackEntry.arguments?.getInt("id") ?: -1
-            NotificationOpenScreen(id, data, notificationRepository, navController)
+            NotificationOpenScreen(id, authState.isAdmin, notificationRepository, navController)
         }
         composable("notices_write"){ NotificationWriteScreen(notificationRepository, navController) } // 관리자 공지 작성 화면
 
@@ -264,7 +264,7 @@ fun AppNavigation(
         composable("appeal2"){ AppealScreen2(appealRepository, navController, authViewModel::onAppealSubmitted) }
         composable("appeal3"){ AppealScreen3(data) }
 
-        composable("declaration") { DeclarationScreen(declarationRepository, postRepository, data, navController) }
+        composable("declaration") { DeclarationScreen(declarationRepository, postRepository, authState.isAdmin, navController) }
         composable( // 신고된 게시글 상세
             "declaration/{postId}/{reportId}",
             arguments = listOf(
@@ -294,7 +294,7 @@ fun AppNavigation(
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
             val postId = backStackEntry.arguments?.getString("postId") ?: ""
-            BanClearPostScreen(banClearRepository, navController, email, postId.toInt(), data)
+            BanClearPostScreen(banClearRepository, navController, email, postId.toInt(), authState.isAdmin)
         }
     }
 }
