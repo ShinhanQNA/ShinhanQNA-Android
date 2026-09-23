@@ -1,6 +1,9 @@
 package com.example.shinhan_qna_aos.servepage.api
 
 import com.example.shinhan_qna_aos.API.APIInterface
+import com.example.shinhan_qna_aos.API.apiResult
+import com.example.shinhan_qna_aos.API.bearerHeader
+import com.example.shinhan_qna_aos.API.bodyOrThrow
 import com.example.shinhan_qna_aos.Data
 
 class AppealRepository(
@@ -8,43 +11,16 @@ class AppealRepository(
     private val data: Data
 ) {
     //이의신청
-    suspend fun appeal(): Result<AppealData> {
-        val accessToken = data.accessToken ?: return Result.failure(Exception("로그인 토큰이 없습니다."))
-        return try {
-            val response = apiInterface.Appeal("Bearer $accessToken")
-            if (response.isSuccessful) {
-                val body = response.body()
-                if(body != null) {
-                    Result.success(body)
-                }else{
-                    Result.failure(Exception("응답 데이터 없음"))
-                }
-            } else {
-                Result.failure(Exception("서버 오류가 발생했습니다."))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun appeal(): Result<AppealData> = apiResult {
+        apiInterface.Appeal(bearerHeader(data.accessToken))
+            .bodyOrThrow("응답 데이터 없음")
     }
 
     // 차단 이유 조회
-    suspend fun blockReason(email: String): Result<BlockReasonData> {
-        val accessToken = data.accessToken ?: return Result.failure(Exception("로그인 토큰이 없습니다."))
-        val request = ReasonRequest(email)
-        return try {
-            val response = apiInterface.BlockReason("Bearer $accessToken", request)
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null) {
-                    Result.success(body)
-                } else {
-                    Result.failure(Exception("차단 이유 데이터 없음"))
-                }
-            } else {
-                Result.failure(Exception("서버 오류가 발생했습니다."))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun blockReason(email: String): Result<BlockReasonData> = apiResult {
+        apiInterface.BlockReason(
+            bearerHeader(data.accessToken),
+            ReasonRequest(email)
+        ).bodyOrThrow("차단 이유 데이터 없음")
     }
 }
