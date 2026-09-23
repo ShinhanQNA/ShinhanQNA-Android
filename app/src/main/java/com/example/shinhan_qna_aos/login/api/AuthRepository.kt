@@ -1,6 +1,10 @@
 package com.example.shinhan_qna_aos.login.api
 
 import com.example.shinhan_qna_aos.API.APIInterface
+import com.example.shinhan_qna_aos.API.apiResult
+import com.example.shinhan_qna_aos.API.bearerHeader
+import com.example.shinhan_qna_aos.API.bodyOrThrow
+import com.example.shinhan_qna_aos.API.successOrThrow
 import com.example.shinhan_qna_aos.Data
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -17,45 +21,24 @@ class AuthRepository(
     private val refreshMutex = Mutex()
 
     //  관리자 로그인
-    suspend fun loginAdmin(id: String, password: String): Result<LoginTokensResponse> {
-        return runCatching {
-            val response = apiInterface.AdminLoginData(AdminRequest(id, password))
-            if (response.isSuccessful) {
-                response.body()?.also {
-                    saveTokens(it, isAdmin = true) // 관리자 여부 저장
-                } ?: throw Exception("로그인 응답이 비어있습니다.")
-            } else {
-                throw Exception("로그인에 실패했습니다.")
-            }
-        }
+    suspend fun loginAdmin(id: String, password: String): Result<LoginTokensResponse> = apiResult {
+        apiInterface.AdminLoginData(AdminRequest(id, password))
+            .bodyOrThrow("로그인 응답이 비어있습니다.", "로그인에 실패했습니다.")
+            .also { saveTokens(it, isAdmin = true) }
     }
 
     //  카카오 로그인
-    suspend fun loginWithKakao(accessToken: String): Result<LoginTokensResponse> {
-        return runCatching {
-            val response = apiInterface.KakaoAuthCode(accessToken)
-            if (response.isSuccessful) {
-                response.body()?.also {
-                    saveTokens(it, isAdmin = false) // 기본적으로 일반 사용자
-                } ?: throw Exception("응답 데이터 없음")
-            } else {
-                throw Exception("로그인에 실패했습니다.")
-            }
-        }
+    suspend fun loginWithKakao(accessToken: String): Result<LoginTokensResponse> = apiResult {
+        apiInterface.KakaoAuthCode(accessToken)
+            .bodyOrThrow("응답 데이터 없음", "로그인에 실패했습니다.")
+            .also { saveTokens(it, isAdmin = false) }
     }
 
     //  구글 로그인
-    suspend fun loginWithGoogle(authCode: String): Result<LoginTokensResponse> {
-        return runCatching {
-            val response = apiInterface.GoogleAuthCode(authCode)
-            if (response.isSuccessful) {
-                response.body()?.also {
-                    saveTokens(it, isAdmin = false)
-                } ?: throw Exception("응답 데이터 없음")
-            } else {
-                throw Exception("로그인에 실패했습니다.")
-            }
-        }
+    suspend fun loginWithGoogle(authCode: String): Result<LoginTokensResponse> = apiResult {
+        apiInterface.GoogleAuthCode(authCode)
+            .bodyOrThrow("응답 데이터 없음", "로그인에 실패했습니다.")
+            .also { saveTokens(it, isAdmin = false) }
     }
 
     /**
@@ -68,16 +51,17 @@ class AuthRepository(
         val refreshToken = data.refreshToken ?: return@withLock Result.success(false)
         if (data.isRefreshTokenExpired()) return@withLock Result.success(false)
 
-        runCatching {
+        apiResult {
             val response = apiInterface.ReToken(RefreshTokenRequest(refreshToken))
             when {
-                response.isSuccessful -> {
-                    val tokens = response.body() ?: throw Exception("토큰 재발급 응답이 비어있습니다.")
-                    saveTokens(tokens, isAdmin = data.isAdmin)
+                response.code() in setOf(400, 401, 403) -> false
+                else -> response.bodyOrThrow(
+                    emptyMessage = "토큰 재발급 응답이 비어있습니다.",
+                    httpMessage = "토큰 재발급에 실패했습니다."
+                ).let {
+                    saveTokens(it, isAdmin = data.isAdmin)
                     true
                 }
-                response.code() in setOf(400, 401, 403) -> false
-                else -> throw Exception("토큰 재발급에 실패했습니다.")
             }
         }
     }
@@ -91,36 +75,22 @@ class AuthRepository(
     /**
      * 로그아웃
      */
-    suspend fun logout(): Result<LogoutData> {
-        val refreshToken = data.refreshToken
-        return try {
-            val response = apiInterface.LogOut("Bearer $refreshToken")
-            if (response.isSuccessful) {
-                data.clearAccountData()
-                Result.success(response.body() ?: LogoutData("로그아웃되었습니다."))
-            } else {
-                Result.failure(Exception("서버 오류가 발생했습니다."))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun logout(): Result<LogoutData> = apiResult {
+        val response = apiInterface.LogOut(
+            bearerHeader(data.refreshToken, "로그인 결과가 없습니다.")
+        )
+        response.successOrThrow()
+        data.clearAccountData()
+        response.body() ?: LogoutData("로그아웃되었습니다.")
     }
 
     /**
      * 회원 탈퇴
      */
-    suspend fun cancleMember(): Result<LogoutData> {
-        val accessToken = data.accessToken
-        return try {
-            val response = apiInterface.CancelMember("Bearer $accessToken")
-            if (response.isSuccessful) {
-                data.clearAccountData()
-                Result.success(response.body() ?: LogoutData("회원 탈퇴가 완료되었습니다."))
-            } else {
-                Result.failure(Exception("서버 오류가 발생했습니다."))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun cancleMember(): Result<LogoutData> = apiResult {
+        val response = apiInterface.CancelMember(bearerHeader(data.accessToken))
+        response.successOrThrow()
+        data.clearAccountData()
+        response.body() ?: LogoutData("회원 탈퇴가 완료되었습니다.")
     }
 }

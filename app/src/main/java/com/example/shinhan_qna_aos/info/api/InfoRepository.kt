@@ -1,8 +1,11 @@
 package com.example.shinhan_qna_aos.info.api
 
 import com.example.shinhan_qna_aos.API.APIInterface
+import com.example.shinhan_qna_aos.API.apiResult
+import com.example.shinhan_qna_aos.API.bearerHeader
+import com.example.shinhan_qna_aos.API.bodyOrThrow
+import com.example.shinhan_qna_aos.API.successOrThrow
 import com.example.shinhan_qna_aos.Data
-import com.google.gson.Gson
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -12,37 +15,22 @@ import java.io.File
 
 class InfoRepository(private val apiInterface: APIInterface, private val data:Data) {
 
-    suspend fun requestReapplication(): Result<Unit> {
-        val accessToken = data.accessToken ?: return Result.failure(Exception("로그인 결과가 없습니다."))
-        return runCatching {
-            val response = apiInterface.updateOwnStatus(
-                "Bearer $accessToken", OwnStatusRequest("가입 대기 중")
-            )
-            if (!response.isSuccessful) throw Exception("가입 재신청에 실패했습니다.")
-        }
+    suspend fun requestReapplication(): Result<Unit> = apiResult {
+        apiInterface.updateOwnStatus(
+            bearerHeader(data.accessToken, "로그인 결과가 없습니다."),
+            OwnStatusRequest("가입 대기 중")
+        ).successOrThrow("가입 재신청에 실패했습니다.")
     }
 
     // 서버로부터 유저 가입 상태 조회 API 호출
-    suspend fun checkUserStatus(): Result<UserResponseWrapper> {
-        val accessToken = data.accessToken ?: return Result.failure(Exception("로그인 결과가 없습니다."))
-        return try {
-            val response = apiInterface.UserCheck("Bearer $accessToken")
-            if (response.isSuccessful) {
-                response.body()?.let {
-                    Result.success(it)
-                } ?: Result.failure(Exception("응답 데이터가 없습니다."))
-            } else {
-                Result.failure(Exception("서버 오류가 발생했습니다."))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun checkUserStatus(): Result<UserResponseWrapper> = apiResult {
+        apiInterface.UserCheck(bearerHeader(data.accessToken, "로그인 결과가 없습니다."))
+            .bodyOrThrow()
     }
 
     // 서버에 학생 정보를 multipart 폼으로 제출하는 API 호출 (응답: String으로 처리)
-    suspend fun submitStudentInfo(infoData: InfoData, imageFile: File): Result<InfoResponse> {
-        val accessToken = data.accessToken ?: return Result.failure(Exception("로그인 결과가 없습니다."))
-        return try {
+    suspend fun submitStudentInfo(infoData: InfoData, imageFile: File): Result<InfoResponse> =
+        apiResult {
             val studentIdPart = infoData.students.toString().toRequestBody("text/plain".toMediaType())
             val yearPart = infoData.year.toString().toRequestBody("text/plain".toMediaType())
             val namePart = infoData.name.toRequestBody("text/plain".toMediaType())
@@ -55,7 +43,7 @@ class InfoRepository(private val apiInterface: APIInterface, private val data:Da
             }
 
             val response = apiInterface.InfoStudent(
-                accessToken = "Bearer $accessToken",
+                accessToken = bearerHeader(data.accessToken, "로그인 결과가 없습니다."),
                 students = studentIdPart,
                 name = namePart,
                 department = departmentPart,
@@ -64,19 +52,6 @@ class InfoRepository(private val apiInterface: APIInterface, private val data:Da
                 studentCertified = studentCertifiedPart,
                 image = imagePart
             )
-
-            if (response.isSuccessful) {
-                val body = response.body()
-                if (body != null) {
-                    Result.success(body)
-                } else {
-                    Result.failure(Exception("응답 데이터가 없습니다."))
-                }
-            } else {
-                Result.failure(Exception("서버 오류가 발생했습니다."))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
+            response.bodyOrThrow()
         }
-    }
 }
