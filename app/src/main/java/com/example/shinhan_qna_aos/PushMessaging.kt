@@ -12,6 +12,9 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.shinhan_qna_aos.API.APIInterface
+import com.example.shinhan_qna_aos.API.apiResult
+import com.example.shinhan_qna_aos.API.bearerHeader
+import com.example.shinhan_qna_aos.API.successOrThrow
 import com.google.firebase.FirebaseApp
 import com.google.firebase.messaging.FirebaseMessaging
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -50,7 +53,7 @@ class PushTokenRegistrar(private val context: Context, private val api: APIInter
 
     suspend fun syncCurrentToken() {
         if (data.accessToken.isNullOrBlank() || FirebaseApp.getApps(context).isEmpty()) return
-        val token = runCatching {
+        val token = apiResult {
             suspendCancellableCoroutine<String?> { continuation ->
                 FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
                     if (continuation.isActive) continuation.resume(if (task.isSuccessful) task.result else null)
@@ -63,9 +66,9 @@ class PushTokenRegistrar(private val context: Context, private val api: APIInter
     suspend fun registerToken(token: String) {
         val accessToken = data.accessToken ?: return
         if (token.isBlank() || lastRegistered == (accessToken to token)) return
-        runCatching {
-            api.registerFcmToken("Bearer $accessToken", FcmTokenRequest(token))
-        }.getOrNull()?.takeIf { it.isSuccessful }?.let { lastRegistered = accessToken to token }
+        apiResult {
+            api.registerFcmToken(bearerHeader(accessToken), FcmTokenRequest(token)).successOrThrow()
+        }.onSuccess { lastRegistered = accessToken to token }
     }
 }
 
