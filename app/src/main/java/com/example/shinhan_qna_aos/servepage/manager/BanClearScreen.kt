@@ -22,6 +22,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -54,12 +56,13 @@ fun BanClearScreen(
     navController: NavController
 ) {
     val banClearViewModel: BanClearViewModel = viewModel(factory = SimpleViewModelFactory { BanClearViewModel(banClearRepository) })
+    val uiState by banClearViewModel.uiState.collectAsState()
 
     LaunchedEffect(Unit) {
         banClearViewModel.LoadBanClearList()
     }
 
-    val banClearList = banClearViewModel.banClearList
+    val banClearList = uiState.banClearList
 
     Box (modifier = Modifier
         .fillMaxSize()
@@ -107,12 +110,13 @@ fun BanClearDetailScreen(
 ) {
     val banClearViewModel: BanClearViewModel =
         viewModel(factory = SimpleViewModelFactory { BanClearViewModel(banClearRepository) })
+    val uiState by banClearViewModel.uiState.collectAsState()
 
     LaunchedEffect(email) {
         banClearViewModel.LoadBanClearDetail(email)
     }
 
-    val banClearDetail = banClearViewModel.banClearDetail
+    val banClearDetail = uiState.banClearDetail
 
 
     Box(
@@ -243,11 +247,12 @@ fun BanClearDetailScreen(
 @Composable
 fun BanClearPostScreen(banClearRepository: BanClearRepository, navController: NavController, email : String, postId : Int, isAdmin: Boolean){
     val banClearViewModel: BanClearViewModel = viewModel(factory = SimpleViewModelFactory { BanClearViewModel(banClearRepository) })
+    val uiState by banClearViewModel.uiState.collectAsState()
 
     LaunchedEffect(email, postId) {
         banClearViewModel.LoadBanClearPost(email, postId)
     }
-    val post = banClearViewModel.banClearPost
+    val post = uiState.banClearPost
 
     Column(
         modifier = Modifier
