@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -52,6 +53,8 @@ class ImageUtils {
 
                 // 조건 만족하면 파일 반환
                 compressedFile
+            } catch (error: CancellationException) {
+                throw error
             } catch (e: Exception) {
                 // 예외 발생 시 null 반환
                 null
