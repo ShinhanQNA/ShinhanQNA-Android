@@ -73,7 +73,8 @@ fun SelectedOpinionsScreen(twPostRepository: TWPostRepository, isAdmin: Boolean,
     val twPostViewModel: TWPostViewModel =
         viewModel(factory = SimpleViewModelFactory { TWPostViewModel(twPostRepository) })
 
-    val opinions by twPostViewModel.opinions.collectAsState()
+    val uiState by twPostViewModel.uiState.collectAsState()
+    val opinions = uiState.opinions
 
     // 주기적 로딩 작업을 관리하는 Job 상태
     var periodicJob by remember { mutableStateOf<Job?>(null) }
@@ -143,10 +144,11 @@ fun SelectedOpenScreen(
         factory = SimpleViewModelFactory { TWPostViewModel(twPostRepository) }
     )
 
-    val groupDetailList by twPostViewModel.groupDetailList.collectAsState()
-    val selectedSort by twPostViewModel.selectedSort.collectAsState()
-    val selectedYear by twPostViewModel.selectedYear.collectAsState()
-    val selectedMonth by twPostViewModel.selectedMonth.collectAsState()
+    val uiState by twPostViewModel.uiState.collectAsState()
+    val groupDetailList = uiState.groupDetailList
+    val selectedSort = uiState.selectedSort
+    val selectedYear = uiState.selectedYear
+    val selectedMonth = uiState.selectedMonth
 
     // 데이터를 불러오면서 연도, 월 값 같이 세팅
     LaunchedEffect(groupId, selectedSort) {
@@ -219,8 +221,9 @@ fun SelectedDetailScreen(
     val twPostViewModel: TWPostViewModel =
         viewModel(factory = SimpleViewModelFactory { TWPostViewModel(twPostRepository) })
 
-    val selectedSort by twPostViewModel.selectedSort.collectAsState()
-    val groupDetailList by twPostViewModel.groupDetailList.collectAsState()
+    val uiState by twPostViewModel.uiState.collectAsState()
+    val selectedSort = uiState.selectedSort
+    val groupDetailList = uiState.groupDetailList
     // 화면 최초 진입 시 groupId, 기본 정렬 'date'로 상세 글 리스트 로드
     LaunchedEffect(groupId) {
         twPostViewModel.loadGroupDetailPosts(groupId, selectedSort)
