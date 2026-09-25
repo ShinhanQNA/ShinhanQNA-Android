@@ -165,8 +165,7 @@ fun AnsweredOpenScreen(
                     AnswerEditPostContent(
                         uiState = uiState,
                         answerViewModel = answerViewModel,
-                        id = id.toString(),
-                        navController = navController
+                        id = id.toString()
                     )
                 } else {
                     LazyColumn {
@@ -200,7 +199,6 @@ fun AnswerEditPostContent(
     uiState: UiAnswerRequest,
     answerViewModel: AnswerViewModel,
     id: String,
-    navController: NavController,
 ) {
     Box(
         modifier = Modifier
@@ -251,7 +249,6 @@ fun AnswerEditPostContent(
                         onSuccess = {
                             answerViewModel.selectAnswerById(id.toInt()) // 상세 조회 로드
                             answerViewModel.loadAnswers() // 전체 조회 로드
-                            navController.navigate("answerOpen/$id")
                         }
                     )
                 }

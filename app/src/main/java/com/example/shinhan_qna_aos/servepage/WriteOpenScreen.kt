@@ -134,7 +134,6 @@ fun WriteOpenScreen(
                         launcher = launcher,
                         context = context,
                         postId = postId,
-                        navController = navController,
                         postViewModel = postViewModel
                     )
                 } else {
@@ -212,7 +211,6 @@ fun EditPostContent(
     launcher: ManagedActivityResultLauncher<String, Uri?>,
     context: Context,
     postId: String,
-    navController: NavController,
     postViewModel: PostViewModel
 ) {
     Box(
@@ -292,7 +290,6 @@ fun EditPostContent(
                         onSuccess = {
                             postViewModel.loadPostDetail(postId) // 상세 조회 로드
                             postViewModel.loadPosts() // 전체 조회 로드
-                            navController.navigate("writeOpen/$postId")
                         }
                     )
                 }

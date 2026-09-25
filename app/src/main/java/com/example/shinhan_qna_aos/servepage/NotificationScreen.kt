@@ -155,8 +155,7 @@ fun NotificationOpenScreen(id:Int, isAdmin: Boolean, notificationRepository: Not
             NoticesEditPostContent(
                 uiState = uiState,
                 notificationViewModel = notificationViewModel,
-                id = id.toString(),
-                navController = navController
+                id = id.toString()
             )
         } else {
             LazyColumn() {

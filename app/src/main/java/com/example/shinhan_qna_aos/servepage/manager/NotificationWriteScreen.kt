@@ -139,7 +139,6 @@ fun NoticesEditPostContent(
     uiState: UiNoticesRequest,
     notificationViewModel: NotificationViewModel,
     id: String,
-    navController: NavController,
 ) {
     Box(
         modifier = Modifier
@@ -190,7 +189,6 @@ fun NoticesEditPostContent(
                         onSuccess = {
                             notificationViewModel.loadNotification(id.toInt()) // 상세 조회 로드
                             notificationViewModel.loadNotification() // 전체 조회 로드
-                            navController.navigate("notices/$id")
                         }
                     )
                 }
