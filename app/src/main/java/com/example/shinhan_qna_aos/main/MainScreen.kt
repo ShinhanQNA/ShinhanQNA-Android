@@ -154,7 +154,7 @@ fun TopIcon(navController: NavController, isAdmin: Boolean){
                     if(isAdmin){
                         navController.navigate("manager_myPage")
                     }else {
-                        navController.navigate("mypage")
+                        navController.navigate("myPage")
                     }
                 }
         ){

@@ -115,7 +115,7 @@ fun NotificationWriteScreen(notificationRepository: NotificationRepository,navCo
                     notificationViewModel.noticesWrite(
                         onSuccess = {
                             navController.navigate("notices") {
-                                popUpTo("notification_write") { inclusive = true }
+                                popUpTo("notices_write") { inclusive = true }
                             }
                         }
                     )
@@ -146,7 +146,6 @@ fun NoticesEditPostContent(
     uiState: UiNoticesRequest,
     notificationViewModel: NotificationViewModel,
     id: String,
-    navController: NavController,
     isLoading: Boolean,
     errorMessage: String?,
 ) {
@@ -203,7 +202,7 @@ fun NoticesEditPostContent(
                     notificationViewModel.updateNotices(
                         id = id,
                         onSuccess = {
-                            navController.navigate("notices/$id")
+                            notificationViewModel.loadNotification(id.toInt())
                         }
                     )
                 }
