@@ -21,9 +21,11 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -60,6 +62,31 @@ val ContentTextStyle = TextStyle(
     fontSize = 14.sp,
     color = Color(0xffA5A5A5)
 )
+
+@Composable
+fun NetworkStateFeedback(
+    isLoading: Boolean,
+    errorMessage: String?,
+    onRetry: (() -> Unit)? = null,
+    modifier: Modifier = Modifier
+) {
+    if (!isLoading && errorMessage == null) return
+
+    Column(
+        modifier = modifier.padding(20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        if (isLoading) {
+            CircularProgressIndicator(color = Color.Black)
+        } else {
+            Text(text = errorMessage.orEmpty(), color = Color(0xffFC4F4F))
+            onRetry?.let { retry ->
+                TextButton(onClick = retry) { Text("다시 시도", color = Color.Black) }
+            }
+        }
+    }
+}
 
 // 공통 레이블 + 필드
 @Composable
@@ -177,14 +204,15 @@ fun SelectDataButton(
     isAdmin: Boolean = false,
     responseState: String,  //  단일 String 으로 수정
     onResponseStateChange: (String) -> Unit = {},
-    onSelectDataClick: () -> Unit
+    onSelectDataClick: () -> Unit,
+    enabled: Boolean = true
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.White)
             .padding(horizontal = 20.dp, vertical = 16.dp)
-            .clickable { onSelectDataClick() },
+            .clickable(enabled = enabled) { onSelectDataClick() },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -221,7 +249,8 @@ fun SelectDataButton(
         if (isAdmin) {
             ManagerDropDown(
                 responseState = responseState,
-                onResponseStateChange = onResponseStateChange
+                onResponseStateChange = onResponseStateChange,
+                enabled = enabled
             )
         }
     }
@@ -263,14 +292,15 @@ fun TitleContentLikeButton(
 fun ManagerDropDown(
     responseState: String,  // 현재 선택된 상태
     responseOptions: List<String> = listOf("응답 대기", "완료"),
-    onResponseStateChange: (String) -> Unit
+    onResponseStateChange: (String) -> Unit,
+    enabled: Boolean = true
 ) {
     var expanded by remember { mutableStateOf(false) }
     Box {
         Row(
             modifier = Modifier
                 .border(1.dp, Color(0xFFdfdfdf), RoundedCornerShape(10.dp))
-                .clickable { expanded = true }
+                .clickable(enabled = enabled) { expanded = true }
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -550,14 +580,20 @@ fun InfoIconCount(
 }
 
 @Composable
-fun ManagerButton(icon: Int, label: String, onClick: () -> Unit, background: Color) {
+fun ManagerButton(
+    icon: Int,
+    label: String,
+    onClick: () -> Unit,
+    background: Color,
+    enabled: Boolean = true
+) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
         modifier = Modifier
             .background(background, RoundedCornerShape(12.dp))
             .padding(horizontal = 12.dp, vertical = 8.dp)
-            .clickable { onClick() }
+            .clickable(enabled = enabled) { onClick() }
     ) {
         Icon(
             painter = painterResource(icon),
@@ -580,7 +616,8 @@ fun ManagerButton(icon: Int, label: String, onClick: () -> Unit, background: Col
 @Composable
 fun ManagerEditDeleteButton( // 관리자
     onDeleteClick: () -> Unit,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    enabled: Boolean = true
 ) {
 
     Row(
@@ -596,7 +633,7 @@ fun ManagerEditDeleteButton( // 관리자
             modifier = Modifier
                 .background(Color(0xffFC4F4F), RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                .clickable { onDeleteClick() }
+                .clickable(enabled = enabled) { onDeleteClick() }
         ) {
             Icon(
                 painter = painterResource(lucide.trash),
@@ -624,7 +661,7 @@ fun ManagerEditDeleteButton( // 관리자
             modifier = Modifier
                 .background(Color(0xff111111), RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                .clickable { onEditClick() }  // 수정 버튼 눌리면 콜백 호출
+                .clickable(enabled = enabled) { onEditClick() }  // 수정 버튼 눌리면 콜백 호출
         ) {
             Icon(
                 painter = painterResource(R.drawable.square_pen),
