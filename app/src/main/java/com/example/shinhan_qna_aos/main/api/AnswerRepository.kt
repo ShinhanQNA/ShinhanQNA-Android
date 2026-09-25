@@ -1,6 +1,10 @@
 package com.example.shinhan_qna_aos.main.api
 
 import com.example.shinhan_qna_aos.API.APIInterface
+import com.example.shinhan_qna_aos.API.apiResult
+import com.example.shinhan_qna_aos.API.bearerHeader
+import com.example.shinhan_qna_aos.API.bodyOrThrow
+import com.example.shinhan_qna_aos.API.successOrThrow
 import com.example.shinhan_qna_aos.Data
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
@@ -13,37 +17,15 @@ class AnswerRepository(
     private val data: Data
 ) {
     // 답변 리스트 받아오기 API 호출
-    suspend fun getAnswers(): Result<List<Answer>> {
-        val accessToken = data.accessToken ?: return Result.failure(Exception("로그인 토큰이 없습니다."))
-        return try {
-            val response = apiInterface.AnswerPost("Bearer $accessToken")
-            if (response.isSuccessful) {
-                response.body()?.let {
-                    Result.success(it)
-                } ?: Result.failure(Exception("응답 데이터가 없습니다."))
-            } else {
-                Result.failure(Exception("서버 오류가 발생했습니다."))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun getAnswers(): Result<List<Answer>> = apiResult {
+        apiInterface.AnswerPost(bearerHeader(data.accessToken)).bodyOrThrow()
     }
     // 답변 작성하기 api
-    suspend fun AnswerWrite(title: String, content: String): Result<Answer> {
-        val accessToken = data.accessToken ?: return Result.failure(Exception("로그인 토큰이 없습니다."))
-        val request = AnswerRequest(title, content)
-        return try {
-            val response = apiInterface.AnswerWritePost("Bearer $accessToken",request)
-            if (response.isSuccessful) {
-                response.body()?.let {
-                    Result.success(it)
-                } ?: Result.failure(Exception("응답 데이터가 없습니다."))
-            } else {
-                Result.failure(Exception("서버 오류가 발생했습니다."))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun AnswerWrite(title: String, content: String): Result<Answer> = apiResult {
+        apiInterface.AnswerWritePost(
+            bearerHeader(data.accessToken),
+            AnswerRequest(title, content)
+        ).bodyOrThrow()
     }
 
     // 답변 수정하기
@@ -51,39 +33,16 @@ class AnswerRepository(
         id: String,
         title: String,
         content: String,
-    ): Result<Answer> {
-        val accessToken = data.accessToken ?: return Result.failure(Exception("로그인 토큰이 없습니다."))
-        val request = AnswerRequest(title = title, content = content)
-        return try {
-
-            val response = apiInterface.UpdateAnswerPost(
-                accessToken = "Bearer $accessToken",
-                id = id.toInt(),
-                answerRequest = request
-            )
-            if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
-            } else {
-                Result.failure(Exception("서버 오류가 발생했습니다."))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    ): Result<Answer> = apiResult {
+        apiInterface.UpdateAnswerPost(
+            accessToken = bearerHeader(data.accessToken),
+            id = id.toInt(),
+            answerRequest = AnswerRequest(title = title, content = content)
+        ).bodyOrThrow("서버 오류가 발생했습니다.")
     }
 
     // 답변 삭제
-    suspend fun AnswerDelete(id: Int): Result<Unit> {
-        val accessToken = data.accessToken ?: return Result.failure(Exception("로그인 토큰이 없습니다"))
-
-        return try {
-            val response = apiInterface.DeleteAnswerPost("Bearer $accessToken", id)
-            if (response.isSuccessful) {
-                Result.success(Unit) // response.body() 체크 없이 성공 처리
-            } else {
-                Result.failure(Exception("서버 오류가 발생했습니다."))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+    suspend fun AnswerDelete(id: Int): Result<Unit> = apiResult {
+        apiInterface.DeleteAnswerPost(bearerHeader(data.accessToken), id).successOrThrow()
     }
 }
