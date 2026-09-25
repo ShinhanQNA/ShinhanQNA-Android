@@ -31,7 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +53,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.InfoIconCount
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.SelectDataButton
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.TitleContentLikeButton
@@ -73,7 +74,7 @@ fun SelectedOpinionsScreen(twPostRepository: TWPostRepository, isAdmin: Boolean,
     val twPostViewModel: TWPostViewModel =
         viewModel(factory = SimpleViewModelFactory { TWPostViewModel(twPostRepository) })
 
-    val uiState by twPostViewModel.uiState.collectAsState()
+    val uiState by twPostViewModel.uiState.collectAsStateWithLifecycle()
     val opinions = uiState.opinions
 
     // 주기적 로딩 작업을 관리하는 Job 상태
@@ -113,6 +114,15 @@ fun SelectedOpinionsScreen(twPostRepository: TWPostRepository, isAdmin: Boolean,
             .fillMaxSize()
             .padding(bottom = 50.dp)
     ) {
+        if (opinions.isEmpty() || uiState.errorMessage != null) {
+            item {
+                NetworkStateFeedback(
+                    isLoading = opinions.isEmpty() && uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
+                    onRetry = if (opinions.isEmpty()) twPostViewModel::loadOpinions else null
+                )
+            }
+        }
         items(opinions, key = { it.groupId }) { opinion ->
             SelectDataButton(
                 year = LocalDate.now().year,
@@ -126,7 +136,8 @@ fun SelectedOpinionsScreen(twPostRepository: TWPostRepository, isAdmin: Boolean,
                 },
                 onSelectDataClick = {
                     navController.navigate("threeWeekOpen/${opinion.groupId}")
-                }
+                },
+                enabled = !uiState.isLoading
             )
             Divider()
         }
@@ -144,7 +155,7 @@ fun SelectedOpenScreen(
         factory = SimpleViewModelFactory { TWPostViewModel(twPostRepository) }
     )
 
-    val uiState by twPostViewModel.uiState.collectAsState()
+    val uiState by twPostViewModel.uiState.collectAsStateWithLifecycle()
     val groupDetailList = uiState.groupDetailList
     val selectedSort = uiState.selectedSort
     val selectedYear = uiState.selectedYear
@@ -179,6 +190,15 @@ fun SelectedOpenScreen(
                 SortSelectionSection(
                     selectedSort = selectedSort,
                     onSortChange = { newSort -> twPostViewModel.changeSort(groupId, newSort) }
+                )
+            }
+
+            if (groupDetailList.isEmpty() || uiState.errorMessage != null) {
+                NetworkStateFeedback(
+                    isLoading = groupDetailList.isEmpty() && uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
+                    onRetry = { twPostViewModel.loadGroupDetailPosts(groupId, selectedSort) },
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
 
@@ -221,7 +241,7 @@ fun SelectedDetailScreen(
     val twPostViewModel: TWPostViewModel =
         viewModel(factory = SimpleViewModelFactory { TWPostViewModel(twPostRepository) })
 
-    val uiState by twPostViewModel.uiState.collectAsState()
+    val uiState by twPostViewModel.uiState.collectAsStateWithLifecycle()
     val selectedSort = uiState.selectedSort
     val groupDetailList = uiState.groupDetailList
     // 화면 최초 진입 시 groupId, 기본 정렬 'date'로 상세 글 리스트 로드
@@ -242,8 +262,20 @@ fun SelectedDetailScreen(
                 .padding(bottom = 50.dp)
         ) {
             TopBar(null) { navController.popBackStack() }
-            DetailContent(title = selectedPost?.title ?: "", content = selectedPost?.content ?: "", imagePath = selectedPost?.imagePath)
-            Box(modifier = Modifier.padding(horizontal = 20.dp)){ InfoIconCount(lucide.thumbs, "좋아요 표시", selectedPost?.likes ?: 0, Color.Black, 16) }
+            if (selectedPost == null || uiState.errorMessage != null) {
+                NetworkStateFeedback(
+                    isLoading = selectedPost == null && uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
+                    onRetry = { twPostViewModel.loadGroupDetailPosts(groupId, selectedSort) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+            selectedPost?.let { post ->
+                DetailContent(title = post.title, content = post.content, imagePath = post.imagePath)
+                Box(modifier = Modifier.padding(horizontal = 20.dp)) {
+                    InfoIconCount(lucide.thumbs, "좋아요 표시", post.likes, Color.Black, 16)
+                }
+            }
         }
     }
 }

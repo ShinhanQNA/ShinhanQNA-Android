@@ -22,7 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +38,7 @@ import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.LikeFlagBan
 import com.example.shinhan_qna_aos.ManagerStudentInfo
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.TitleContentCountButton
@@ -56,7 +57,7 @@ fun BanClearScreen(
     navController: NavController
 ) {
     val banClearViewModel: BanClearViewModel = viewModel(factory = SimpleViewModelFactory { BanClearViewModel(banClearRepository) })
-    val uiState by banClearViewModel.uiState.collectAsState()
+    val uiState by banClearViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         banClearViewModel.LoadBanClearList()
@@ -91,6 +92,14 @@ fun BanClearScreen(
                 }
             }
         }
+        if (banClearList.isEmpty() || uiState.errorMessage != null) {
+            NetworkStateFeedback(
+                isLoading = banClearList.isEmpty() && uiState.isLoading,
+                errorMessage = uiState.errorMessage,
+                onRetry = banClearViewModel::LoadBanClearList,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
         Text(
             "배너광고",
             modifier = Modifier
@@ -110,7 +119,7 @@ fun BanClearDetailScreen(
 ) {
     val banClearViewModel: BanClearViewModel =
         viewModel(factory = SimpleViewModelFactory { BanClearViewModel(banClearRepository) })
-    val uiState by banClearViewModel.uiState.collectAsState()
+    val uiState by banClearViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(email) {
         banClearViewModel.LoadBanClearDetail(email)
@@ -129,6 +138,14 @@ fun BanClearDetailScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             TopBar("", { navController.popBackStack() }) // 타이틀 없을 땐 공백
+            if (banClearDetail == null || uiState.errorMessage != null) {
+                NetworkStateFeedback(
+                    isLoading = banClearDetail == null && uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
+                    onRetry = { banClearViewModel.LoadBanClearDetail(email) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             ManagerStudentInfo(
                 "이름",
                 banClearDetail?.name ?: "",
@@ -190,9 +207,12 @@ fun BanClearDetailScreen(
                 modifier = Modifier
                     .background(Color(0xffFC4F4F), RoundedCornerShape(12.dp))
                     .padding(horizontal = 12.dp, vertical = 8.dp)
-                    .clickable {
-                        banClearViewModel.banStatus("거절", banClearDetail!!.id)
-                        navController.popBackStack()
+                    .clickable(enabled = !uiState.isLoading && banClearDetail != null) {
+                        banClearDetail?.let { detail ->
+                            banClearViewModel.banStatus("거절", detail.id) {
+                                navController.popBackStack()
+                            }
+                        }
                     }
             ) {
                 Icon(
@@ -219,9 +239,12 @@ fun BanClearDetailScreen(
                 modifier = Modifier
                     .background(Color(0xff4AD871), RoundedCornerShape(12.dp))
                     .padding(horizontal = 12.dp, vertical = 8.dp)
-                    .clickable {
-                        banClearViewModel.banStatus("승인", banClearDetail!!.id)
-                        navController.popBackStack()
+                    .clickable(enabled = !uiState.isLoading && banClearDetail != null) {
+                        banClearDetail?.let { detail ->
+                            banClearViewModel.banStatus("승인", detail.id) {
+                                navController.popBackStack()
+                            }
+                        }
                     }
             ) {
                 Icon(
@@ -247,7 +270,7 @@ fun BanClearDetailScreen(
 @Composable
 fun BanClearPostScreen(banClearRepository: BanClearRepository, navController: NavController, email : String, postId : Int, isAdmin: Boolean){
     val banClearViewModel: BanClearViewModel = viewModel(factory = SimpleViewModelFactory { BanClearViewModel(banClearRepository) })
-    val uiState by banClearViewModel.uiState.collectAsState()
+    val uiState by banClearViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(email, postId) {
         banClearViewModel.LoadBanClearPost(email, postId)
@@ -260,6 +283,14 @@ fun BanClearPostScreen(banClearRepository: BanClearRepository, navController: Na
             .background(Color.White)
     ) {
         TopBar("", {navController.popBackStack()}) // 타이틀 없을 땐 공백
+        if (post == null || uiState.errorMessage != null) {
+            NetworkStateFeedback(
+                isLoading = post == null && uiState.isLoading,
+                errorMessage = uiState.errorMessage,
+                onRetry = { banClearViewModel.LoadBanClearPost(email, postId) },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
         Spacer(modifier = Modifier.height(16.dp))
         LazyColumn() {
             item{

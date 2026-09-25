@@ -29,7 +29,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -54,6 +54,7 @@ import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.debugLog
 import com.example.shinhan_qna_aos.LikeFlagBan
 import com.example.shinhan_qna_aos.ManagerButton
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.PlainInputField
 import com.example.shinhan_qna_aos.servepage.api.WriteData
 import com.example.shinhan_qna_aos.servepage.api.WriteRepository
@@ -79,9 +80,9 @@ fun WriteOpenScreen(
     val writingViewModel: WritingViewModel =
         viewModel(factory = SimpleViewModelFactory { WritingViewModel(writeRepository) })
 
-    val postUiState by postViewModel.uiState.collectAsState()
+    val postUiState by postViewModel.uiState.collectAsStateWithLifecycle()
     val postDetail = postUiState.selectedPost
-    val writingUiState by writingViewModel.uiState.collectAsState()
+    val writingUiState by writingViewModel.uiState.collectAsStateWithLifecycle()
     val uiState = writingUiState.form
 
     LaunchedEffect(writingUiState.errorMessage) {
@@ -134,9 +135,15 @@ fun WriteOpenScreen(
                         launcher = launcher,
                         context = context,
                         postId = postId,
-                        postViewModel = postViewModel
+                        postViewModel = postViewModel,
+                        isLoading = writingUiState.isLoading,
+                        errorMessage = writingUiState.errorMessage
                     )
                 } else {
+                    NetworkStateFeedback(
+                        isLoading = postUiState.isLoading,
+                        errorMessage = postUiState.errorMessage
+                    )
                     //  읽기 모드
                     LazyColumn {
                         item {
@@ -148,8 +155,9 @@ fun WriteOpenScreen(
                                 ManagerFunctionButton(
                                     onDeleteClick = {
                                         debugLog("WriteOpenScreen", "삭제 버튼을 눌렀습니다.")
-                                        postViewModel.deletePost(postId.toInt())
-                                        navController.popBackStack()
+                                        postViewModel.deletePost(postId.toInt()) {
+                                            navController.popBackStack()
+                                        }
                                     },
                                     onWarningClick = { reason ->
                                         postViewModel.warningUser(
@@ -158,30 +166,32 @@ fun WriteOpenScreen(
                                             reason = reason,
                                             postId = postId
                                         )
-                                    }
+                                    },
+                                    enabled = !postUiState.isLoading
                                 )
                             } else {
                                 if(isOwner){
                                     EditDeleteButton(
                                         onDeleteClick = {
                                             debugLog("WriteOpenScreen", "삭제 버튼을 눌렀습니다.")
-                                            postViewModel.deletePost(postId.toInt())
-                                            navController.popBackStack()
+                                            postViewModel.deletePost(postId.toInt()) {
+                                                navController.popBackStack()
+                                            }
                                         },
-                                        onEditClick = { writingViewModel.enterEditMode(detail, context) }
+                                        onEditClick = { writingViewModel.enterEditMode(detail, context) },
+                                        enabled = !postUiState.isLoading
                                     )
                                 }else{
                                     FlagLikeButton(
                                         onFlagClick = {
                                             debugLog("WriteOpenScreen", "신고 버튼을 눌렀습니다.")
                                             postViewModel.flagPost(postId.toInt(), "")
-                                            postViewModel.loadPostDetail(postId)
                                         },
                                         onLikeClick = {
                                             debugLog("WriteOpenScreen", "공감 버튼을 눌렀습니다.")
                                             postViewModel.toggleLike(postId.toInt())
-                                            postViewModel.loadPostDetail(postId)
                                         },
+                                        enabled = !postUiState.isLoading
                                     )
                                 }
                                 Spacer(modifier = Modifier.height(36.dp))
@@ -202,6 +212,22 @@ fun WriteOpenScreen(
             )
         }
     }
+    if (postDetail == null) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .systemBarsPadding()
+                .background(Color.White)
+        ) {
+            TopBar(null) { navController.popBackStack() }
+            NetworkStateFeedback(
+                isLoading = postUiState.isLoading,
+                errorMessage = postUiState.errorMessage,
+                onRetry = { postViewModel.loadPostDetail(postId) },
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+    }
 }
 
 @Composable
@@ -211,7 +237,9 @@ fun EditPostContent(
     launcher: ManagedActivityResultLauncher<String, Uri?>,
     context: Context,
     postId: String,
-    postViewModel: PostViewModel
+    postViewModel: PostViewModel,
+    isLoading: Boolean,
+    errorMessage: String?
 ) {
     Box(
         modifier = Modifier
@@ -224,6 +252,12 @@ fun EditPostContent(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                item {
+                    NetworkStateFeedback(
+                        isLoading = isLoading,
+                        errorMessage = errorMessage
+                    )
+                }
                 item {
                     WritingTitleField(
                         value = uiState.title,
@@ -252,7 +286,7 @@ fun EditPostContent(
                             modifier = Modifier
                                 .background(Color.Black, RoundedCornerShape(12.dp))
                                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                                .clickable { launcher.launch("image/*") }
+                                .clickable(enabled = !isLoading) { launcher.launch("image/*") }
                         ) {
                             Icon(
                                 painter = painterResource(lucide.images),
@@ -284,12 +318,11 @@ fun EditPostContent(
                 .padding(20.dp)
                 .background(Color.Black, RoundedCornerShape(12.dp))
                 .padding(horizontal = 18.dp, vertical = 12.dp)
-                .clickable {
+                .clickable(enabled = !isLoading) {
                     writingViewModel.updatePost(
                         postId = postId,
                         onSuccess = {
-                            postViewModel.loadPostDetail(postId) // 상세 조회 로드
-                            postViewModel.loadPosts() // 전체 조회 로드
+                            postViewModel.loadPostDetail(postId)
                         }
                     )
                 }
@@ -310,6 +343,7 @@ fun EditPostContent(
 fun FlagLikeButton( // 작성자가 아닐때
     onFlagClick: () -> Unit,
     onLikeClick: () -> Unit,
+    enabled: Boolean,
 ) {
     Row(
         modifier = Modifier
@@ -324,7 +358,7 @@ fun FlagLikeButton( // 작성자가 아닐때
             modifier = Modifier
                 .background(Color(0xffFF9F43), RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                .clickable { onFlagClick() }  // 신고 버튼 눌리면 콜백 호출
+                .clickable(enabled = enabled) { onFlagClick() }  // 신고 버튼 눌리면 콜백 호출
         ) {
             Icon(
                 painter = painterResource( R.drawable.flag),
@@ -352,7 +386,7 @@ fun FlagLikeButton( // 작성자가 아닐때
             modifier = Modifier
                 .background(Color.Black, RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                .clickable { onLikeClick() }
+                .clickable(enabled = enabled) { onLikeClick() }
         ) {
             Icon(
                 painter = painterResource(lucide.thumbs),
@@ -376,7 +410,11 @@ fun FlagLikeButton( // 작성자가 아닐때
 // 게시판 관리자 버튼
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ManagerFunctionButton( onDeleteClick: () -> Unit, onWarningClick: (String) -> Unit) {
+fun ManagerFunctionButton(
+    onDeleteClick: () -> Unit,
+    onWarningClick: (String) -> Unit,
+    enabled: Boolean
+) {
     var showSheet by remember { mutableStateOf(false) }
     var reason by remember { mutableStateOf("") }
     Row(
@@ -389,7 +427,8 @@ fun ManagerFunctionButton( onDeleteClick: () -> Unit, onWarningClick: (String) -
             icon = lucide.trash,
             label = "삭제",
             background = Color(0xffFC4F4F),
-            onClick = { onDeleteClick() }
+            onClick = { onDeleteClick() },
+            enabled = enabled
         )
 
         Spacer(modifier = Modifier.width(16.dp))
@@ -398,7 +437,8 @@ fun ManagerFunctionButton( onDeleteClick: () -> Unit, onWarningClick: (String) -
             icon = lucide.flag,
             label = "경고",
             background = Color(0xffFF9F43),
-            onClick = { showSheet = true }
+            onClick = { showSheet = true },
+            enabled = enabled
         )
     }
     if (showSheet) {
@@ -469,7 +509,7 @@ fun ManagerFunctionButton( onDeleteClick: () -> Unit, onWarningClick: (String) -
                         modifier = Modifier
                             .background(Color(0xff4AD871), RoundedCornerShape(12.dp))
                             .padding(horizontal = 12.dp, vertical = 8.dp)
-                            .clickable {
+                            .clickable(enabled = enabled && reason.isNotBlank()) {
                                 onWarningClick(reason)
                                 reason = ""
                                 showSheet = false
@@ -500,7 +540,8 @@ fun ManagerFunctionButton( onDeleteClick: () -> Unit, onWarningClick: (String) -
 @Composable
 fun EditDeleteButton( // 작성자(사용자)
     onDeleteClick: () -> Unit,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
+    enabled: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -515,7 +556,7 @@ fun EditDeleteButton( // 작성자(사용자)
             modifier = Modifier
                 .background(Color(0xffFF9F43), RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                .clickable { onEditClick() }  // 수정 버튼 눌리면 콜백 호출
+                .clickable(enabled = enabled) { onEditClick() }  // 수정 버튼 눌리면 콜백 호출
         ) {
             Icon(
                 painter = painterResource( R.drawable.square_pen ),
@@ -543,7 +584,7 @@ fun EditDeleteButton( // 작성자(사용자)
             modifier = Modifier
                 .background(Color(0xffFC4F4F), RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                .clickable { onDeleteClick() }
+                .clickable(enabled = enabled) { onDeleteClick() }
         ) {
             Icon(
                 painter = painterResource( lucide.trash ),

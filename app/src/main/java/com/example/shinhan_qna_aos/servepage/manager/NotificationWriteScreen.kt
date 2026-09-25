@@ -19,7 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.TopBar
 import com.example.shinhan_qna_aos.servepage.WriteInfo
 import com.example.shinhan_qna_aos.servepage.WritingContentField
@@ -47,7 +48,7 @@ fun NotificationWriteScreen(notificationRepository: NotificationRepository,navCo
     val notificationViewModel: NotificationViewModel =
         viewModel(factory = SimpleViewModelFactory { NotificationViewModel(notificationRepository) })
 
-    val uiState by notificationViewModel.uiState.collectAsState()
+    val uiState by notificationViewModel.uiState.collectAsStateWithLifecycle()
     val noticesstate = uiState.form
 
     Box(
@@ -68,6 +69,12 @@ fun NotificationWriteScreen(notificationRepository: NotificationRepository,navCo
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                item {
+                    NetworkStateFeedback(
+                        isLoading = uiState.isLoading,
+                        errorMessage = uiState.errorMessage
+                    )
+                }
                 item {
                     WritingTitleField(
                         value = noticesstate.title,
@@ -104,7 +111,7 @@ fun NotificationWriteScreen(notificationRepository: NotificationRepository,navCo
                 .padding(20.dp)             // FAB 기본 여백 느낌
                 .background(Color.Black, RoundedCornerShape(12.dp))
                 .padding(horizontal = 18.dp, vertical = 12.dp)
-                .clickable {
+                .clickable(enabled = !uiState.isLoading) {
                     notificationViewModel.noticesWrite(
                         onSuccess = {
                             navController.navigate("notices") {
@@ -139,6 +146,8 @@ fun NoticesEditPostContent(
     uiState: UiNoticesRequest,
     notificationViewModel: NotificationViewModel,
     id: String,
+    isLoading: Boolean,
+    errorMessage: String?,
 ) {
     Box(
         modifier = Modifier
@@ -151,6 +160,12 @@ fun NoticesEditPostContent(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                item {
+                    NetworkStateFeedback(
+                        isLoading = isLoading,
+                        errorMessage = errorMessage
+                    )
+                }
                 item {
                     WritingTitleField(
                         value = uiState.title,
@@ -183,12 +198,11 @@ fun NoticesEditPostContent(
                 .padding(20.dp)
                 .background(Color.Black, RoundedCornerShape(12.dp))
                 .padding(horizontal = 18.dp, vertical = 12.dp)
-                .clickable {
+                .clickable(enabled = !isLoading) {
                     notificationViewModel.updateNotices(
                         id = id,
                         onSuccess = {
-                            notificationViewModel.loadNotification(id.toInt()) // 상세 조회 로드
-                            notificationViewModel.loadNotification() // 전체 조회 로드
+                            notificationViewModel.loadNotification(id.toInt())
                         }
                     )
                 }

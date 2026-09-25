@@ -55,13 +55,13 @@ class AccessionViewModel(private val accessionRepository: AccessionRepository) :
         }
     }
 
-    fun UserStatus(email: String, status: String) {
+    fun UserStatus(email: String, status: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             accessionRepository.userStatus(email, status)
                 .onSuccess {
                     _uiState.update { it.copy(isLoading = false) }
-                    LoadAccession()
+                    onSuccess()
                 }
                 .onFailure { error ->
                     _uiState.update {

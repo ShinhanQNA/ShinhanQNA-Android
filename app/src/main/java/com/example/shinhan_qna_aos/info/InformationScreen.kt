@@ -31,7 +31,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.LabeledField
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.PlainInputField
 import com.example.shinhan_qna_aos.info.api.InfoViewModel
 import com.example.shinhan_qna_aos.ui.theme.pretendard
@@ -62,7 +63,7 @@ fun InformationScreen(
 ) {
     val context = LocalContext.current
 
-    val uiState by infoViewModel.uiState.collectAsState()
+    val uiState by infoViewModel.uiState.collectAsStateWithLifecycle()
     val form = uiState.form
     // 드랍시트 관리
     var expandedGrade by remember { mutableStateOf(false) }
@@ -147,8 +148,12 @@ fun InformationScreen(
                 onClick = {
                     infoViewModel.submitStudentInfo(context, reapplying, onSubmitted)
                 },
-                enabled = isFormValid)
-            uiState.errorMessage?.let { Text(it, color = Color(0xffFC4F4F)) }
+                enabled = isFormValid && !uiState.isLoading
+            )
+            NetworkStateFeedback(
+                isLoading = uiState.isLoading,
+                errorMessage = uiState.errorMessage
+            )
         }
     }
 }
@@ -286,7 +291,7 @@ fun MajorDropdown(
 @Composable
 fun ImageInsert(viewModel: InfoViewModel, fontSize: TextUnit) {
 
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val imageUri = uiState.form.imageUri
 
     val launcher =
@@ -310,6 +315,7 @@ fun ImageInsert(viewModel: InfoViewModel, fontSize: TextUnit) {
         ) {
             Button(
                 onClick = { launcher.launch("image/*") },
+                enabled = !uiState.isLoading,
                 colors = ButtonDefaults.buttonColors(Color.Black),
                 modifier = Modifier.defaultMinSize(minHeight = 36.dp),
                 shape = RoundedCornerShape(12.dp),
