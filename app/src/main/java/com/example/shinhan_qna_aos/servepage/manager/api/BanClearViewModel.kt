@@ -74,11 +74,14 @@ class BanClearViewModel(private val banClearRepository: BanClearRepository) : Vi
         }
     }
 
-    fun banStatus(status: String, appealId: Int) {
+    fun banStatus(status: String, appealId: Int, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             banClearRepository.banStatus(status, appealId)
-                .onSuccess { _uiState.update { it.copy(isLoading = false) } }
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false) }
+                    onSuccess()
+                }
                 .onFailure { error ->
                     _uiState.update {
                         it.copy(

@@ -42,6 +42,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
 import com.example.shinhan_qna_aos.ManagerStudentInfo
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.TitleYearButton
 import com.example.shinhan_qna_aos.TopBar
@@ -92,6 +93,14 @@ fun AccessionScreen(
                 }
             }
         }
+        if (accessionList.isEmpty() || uiState.errorMessage != null) {
+            NetworkStateFeedback(
+                isLoading = accessionList.isEmpty() && uiState.isLoading,
+                errorMessage = uiState.errorMessage,
+                onRetry = accessionViewModel::LoadAccession,
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
         Text(
             "배너광고",
             modifier = Modifier
@@ -130,6 +139,14 @@ fun AccessionDetailScreen(
                 .fillMaxSize()
         ) {
             TopBar("", { navController.popBackStack() }) // 타이틀 없을 땐 공백
+            if (accessionDetail == null || uiState.errorMessage != null) {
+                NetworkStateFeedback(
+                    isLoading = accessionDetail == null && uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
+                    onRetry = { accessionViewModel.LoadAccessionDetail(email) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
             ManagerStudentInfo(
                 "이름",
                 accessionDetail?.name ?: "",
@@ -192,9 +209,9 @@ fun AccessionDetailScreen(
         ) {
             Button(
                 onClick = {
-                    accessionViewModel.UserStatus(email, "가입 거절")
-                    navController.popBackStack()
+                    accessionViewModel.UserStatus(email, "가입 거절") { navController.popBackStack() }
                 },
+                enabled = !uiState.isLoading,
                 contentPadding = PaddingValues(0.dp),
                 colors = ButtonDefaults.buttonColors(Color(0xffFC4F4F)),
                 shape = RoundedCornerShape(12.dp)
@@ -223,9 +240,9 @@ fun AccessionDetailScreen(
             Spacer(modifier = Modifier.width(16.dp))
             Button(
                 onClick = {
-                    accessionViewModel.UserStatus(email, "가입 완료")
-                    navController.popBackStack()
+                    accessionViewModel.UserStatus(email, "가입 완료") { navController.popBackStack() }
                 },
+                enabled = !uiState.isLoading,
                 contentPadding = PaddingValues(0.dp),
                 colors = ButtonDefaults.buttonColors(Color(0xff4AD871)),
                 shape = RoundedCornerShape(12.dp)

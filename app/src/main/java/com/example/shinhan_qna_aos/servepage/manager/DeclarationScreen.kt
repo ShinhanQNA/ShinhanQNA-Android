@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.ManagerButton
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.TopBar
 import com.jihan.lucide_icons.lucide
 import androidx.compose.foundation.background
@@ -117,6 +118,17 @@ fun DeclarationScreen(
                 }
             }
         }
+        if (combinedList.isEmpty() || declarationUiState.errorMessage != null || postUiState.errorMessage != null) {
+            NetworkStateFeedback(
+                isLoading = combinedList.isEmpty() && (declarationUiState.isLoading || postUiState.isLoading),
+                errorMessage = declarationUiState.errorMessage ?: postUiState.errorMessage,
+                onRetry = {
+                    declarationViewModel.LoadDeclaration()
+                    postViewModel.loadPosts()
+                },
+                modifier = Modifier.align(Alignment.Center)
+            )
+        }
         Text(
             "배너광고",
             modifier = Modifier
@@ -159,36 +171,50 @@ fun DeclarationOpenScreen(postId: String, reportId: Int, navController: NavContr
 
     Column(modifier = Modifier.systemBarsPadding().fillMaxSize().background(Color.White)) {
         TopBar(null) { navController.popBackStack() }
+        if (postDetail == null || postUiState.errorMessage != null || declarationUiState.errorMessage != null) {
+            NetworkStateFeedback(
+                isLoading = postDetail == null && (postUiState.isLoading || declarationUiState.isLoading),
+                errorMessage = declarationUiState.errorMessage ?: postUiState.errorMessage,
+                onRetry = if (postDetail == null || postUiState.errorMessage != null) {
+                    { postViewModel.loadPostDetail(postId) }
+                } else null,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
         LazyColumn() {
             item {
-                DetailContent(
-                    title = postDetail?.title.toString(),
-                    content = postDetail?.content ?: "",
-                    imagePath = postDetail?.imagePath
-                )
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    ManagerButton(
-                        icon = lucide.arrow_big_left_dash,
-                        label = "반려",
-                        background = Color(0xffFC4F4F),
-                        onClick = {
-                            declarationViewModel.DeclarationReject(reportId)
-                        }
+                postDetail?.let { detail ->
+                    DetailContent(
+                        title = detail.title,
+                        content = detail.content,
+                        imagePath = detail.imagePath
                     )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        ManagerButton(
+                            icon = lucide.arrow_big_left_dash,
+                            label = "반려",
+                            background = Color(0xffFC4F4F),
+                            enabled = !declarationUiState.isLoading,
+                            onClick = {
+                                declarationViewModel.DeclarationReject(reportId)
+                            }
+                        )
 
-                    Spacer(modifier = Modifier.width(16.dp))
+                        Spacer(modifier = Modifier.width(16.dp))
 
-                    ManagerButton(
-                        icon = lucide.flag,
-                        label = "경고",
-                        background = Color(0xffFF9F43),
-                        onClick = {showSheet=true}
-                    )
+                        ManagerButton(
+                            icon = lucide.flag,
+                            label = "경고",
+                            background = Color(0xffFF9F43),
+                            enabled = !postUiState.isLoading,
+                            onClick = { showSheet = true }
+                        )
+                    }
                 }
             }
         }
@@ -267,7 +293,7 @@ fun DeclarationOpenScreen(postId: String, reportId: Int, navController: NavContr
                         modifier = Modifier
                             .background(Color(0xff4AD871), RoundedCornerShape(12.dp))
                             .padding(horizontal = 12.dp, vertical = 8.dp)
-                            .clickable {
+                            .clickable(enabled = !postUiState.isLoading && reason.isNotBlank()) {
                                 postViewModel.warningUser(
                                     email = writerEmail,
                                     status = "경고",
