@@ -179,6 +179,7 @@ fun AnsweredOpenScreen(
                         uiState = uiState,
                         answerViewModel = answerViewModel,
                         id = id.toString(),
+                        navController = navController,
                         isLoading = state.isLoading,
                         errorMessage = state.errorMessage
                     )
@@ -224,6 +225,7 @@ fun AnswerEditPostContent(
     uiState: UiAnswerRequest,
     answerViewModel: AnswerViewModel,
     id: String,
+    navController: NavController,
     isLoading: Boolean,
     errorMessage: String?,
 ) {
@@ -280,7 +282,7 @@ fun AnswerEditPostContent(
                     answerViewModel.updateAnswerPost(
                         id = id,
                         onSuccess = {
-                            answerViewModel.loadAnswers()
+                            navController.navigate("answerOpen/$id")
                         }
                     )
                 }
