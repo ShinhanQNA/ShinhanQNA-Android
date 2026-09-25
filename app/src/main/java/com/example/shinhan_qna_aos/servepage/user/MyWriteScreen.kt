@@ -14,6 +14,8 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,7 +32,8 @@ import com.example.shinhan_qna_aos.main.api.PostViewModel
 @Composable
 fun MyWriteScreen(postRepository: PostRepository, navController: NavController){
     val postViewModel:PostViewModel = viewModel(factory = SimpleViewModelFactory() { PostViewModel(postRepository) })
-    val myPostList = postViewModel.myPostList
+    val uiState by postViewModel.uiState.collectAsState()
+    val myPostList = uiState.myPostList
 
     LaunchedEffect (Unit){
         postViewModel.loadMyPosts()

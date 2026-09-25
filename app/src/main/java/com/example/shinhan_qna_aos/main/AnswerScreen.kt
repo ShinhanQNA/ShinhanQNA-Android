@@ -65,7 +65,8 @@ fun AnsweredScreen(answerRepository: AnswerRepository, navController: NavControl
     val answerViewModel: AnswerViewModel =
         viewModel(factory = SimpleViewModelFactory { AnswerViewModel(answerRepository) })
 
-    val answerList by answerViewModel.answerList.collectAsState()
+    val uiState by answerViewModel.uiState.collectAsState()
+    val answerList = uiState.answerList
 
 // 주기적 로딩 작업을 관리하는 Job 상태
     var periodicJob by remember { mutableStateOf<Job?>(null) }
@@ -124,10 +125,10 @@ fun AnsweredOpenScreen(
     val answerViewModel: AnswerViewModel =
         viewModel(factory = SimpleViewModelFactory { AnswerViewModel(answerRepository) })
 
-    val selectedAnswer by answerViewModel.selectedAnswer.collectAsState()
-    val answerList by answerViewModel.answerList.collectAsState()
-
-    val uiState = answerViewModel.answerstate
+    val state by answerViewModel.uiState.collectAsState()
+    val selectedAnswer = state.selectedAnswer
+    val answerList = state.answerList
+    val uiState = state.form
 
     // 최초에 리스트가 비어있거나 id가 바뀌면 답변 리스트 로드 후 id 검색
     LaunchedEffect(id, answerList) {
@@ -251,9 +252,6 @@ fun AnswerEditPostContent(
                             answerViewModel.selectAnswerById(id.toInt()) // 상세 조회 로드
                             answerViewModel.loadAnswers() // 전체 조회 로드
                             navController.navigate("answerOpen/$id")
-                        },
-                        onError = {
-//                            Toast.makeText(context, "답변 게시글 수정 실패", Toast.LENGTH_SHORT).show()
                         }
                     )
                 }

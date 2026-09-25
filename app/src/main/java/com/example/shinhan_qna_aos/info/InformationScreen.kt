@@ -63,13 +63,13 @@ fun InformationScreen(
     val context = LocalContext.current
 
     val uiState by infoViewModel.uiState.collectAsState()
-    val submitError by infoViewModel.submitError.collectAsState()
+    val form = uiState.form
     // 드랍시트 관리
     var expandedGrade by remember { mutableStateOf(false) }
     var expandedMajor by remember { mutableStateOf(false) }
 
     // 가입 요청 모든 필드 입력시에만 누를 수 있도록
-    val isFormValid = remember(uiState) { uiState.name.isNotBlank() && uiState.students != 0 && uiState.year != 0 && uiState.department.isNotBlank() && uiState.imageUri != Uri.EMPTY }
+    val isFormValid = remember(form) { form.name.isNotBlank() && form.students != 0 && form.year != 0 && form.department.isNotBlank() && form.imageUri != Uri.EMPTY }
 
     BoxWithConstraints(
         modifier = Modifier
@@ -106,7 +106,7 @@ fun InformationScreen(
                 modifier = Modifier.fillMaxWidth(contentWidthFraction)
             ) {
                 NameField(
-                    value = uiState.name,
+                    value = form.name,
                     onValueChange = infoViewModel::onNameChange,
                     fontSize = 14.sp,
                 )
@@ -115,14 +115,14 @@ fun InformationScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     StudentIdField(
-                        value = uiState.students,
+                        value = form.students,
                         onValueChange = infoViewModel::onStudentIdChange,
                         fontSize = 14.sp,
                         modifier = Modifier.weight(0.55f)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     GradeDropdown(
-                        selected = uiState.year,
+                        selected = form.year,
                         onSelectedChange = infoViewModel::onGradeChange,
                         options = listOf("1학년", "2학년", "3학년", "4학년"),
                         expanded = expandedGrade,
@@ -132,7 +132,7 @@ fun InformationScreen(
                     )
                 }
                 MajorDropdown(
-                    selected = uiState.department,
+                    selected = form.department,
                     onSelectedChange = infoViewModel::onMajorChange,
                     options = listOf("소프트웨어융합"),
                     expanded = expandedMajor,
@@ -148,7 +148,7 @@ fun InformationScreen(
                     infoViewModel.submitStudentInfo(context, reapplying, onSubmitted)
                 },
                 enabled = isFormValid)
-            submitError?.let { Text(it, color = Color(0xffFC4F4F)) }
+            uiState.errorMessage?.let { Text(it, color = Color(0xffFC4F4F)) }
         }
     }
 }
@@ -287,7 +287,7 @@ fun MajorDropdown(
 fun ImageInsert(viewModel: InfoViewModel, fontSize: TextUnit) {
 
     val uiState by viewModel.uiState.collectAsState()
-    val imageUri = uiState.imageUri
+    val imageUri = uiState.form.imageUri
 
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->

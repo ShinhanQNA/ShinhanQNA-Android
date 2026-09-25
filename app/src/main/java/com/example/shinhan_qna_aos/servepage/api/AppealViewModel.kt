@@ -1,53 +1,59 @@
 package com.example.shinhan_qna_aos.servepage.api
 
-import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.shinhan_qna_aos.userMessage
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+data class AppealUiState(
+    val appeal: AppealData? = null,
+    val blockReasonData: BlockReasonData? = null,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)
 
 class AppealViewModel(
     private val appealRepository: AppealRepository
 ) : ViewModel() {
+    private val _uiState = MutableStateFlow(AppealUiState())
+    val uiState = _uiState.asStateFlow()
 
-    // 게시글 목록 상태
-    var appeal by mutableStateOf<AppealData?>(null)
-        private set
-
-    var errorMessage by mutableStateOf<String?>(null)
-        private set
-
-    // 단일 차단 사유 데이터 상태 (null 초기값 허용)
-    var blockReasonData by mutableStateOf<BlockReasonData?>(null)
-        private set
-
-    // 이의 신청 불러오기
     fun loadAppeals(onSuccess: () -> Unit) {
         viewModelScope.launch {
-            errorMessage = null
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             appealRepository.appeal()
-                .onSuccess { response ->
-                    appeal = response
+                .onSuccess { appeal ->
+                    _uiState.update { it.copy(appeal = appeal, isLoading = false) }
                     onSuccess()
                 }
-                .onFailure {
-                    errorMessage = "이의신청 접수에 실패했습니다."
-                    Log.e("AppealViewModel", "이의신청 접수에 실패했습니다.")
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("이의신청 접수에 실패했습니다.")
+                        )
+                    }
                 }
         }
     }
 
-    // 해당 이메일로 차단 사유 불러오기
     fun loadBlockReason(email: String) {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             appealRepository.blockReason(email)
-                .onSuccess { data ->
-                    blockReasonData = data
+                .onSuccess { reason ->
+                    _uiState.update { it.copy(blockReasonData = reason, isLoading = false) }
                 }
-                .onFailure {
-                    Log.e("AppealViewModel", "차단 사유를 불러오지 못했습니다.")
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("차단 사유를 불러오지 못했습니다.")
+                        )
+                    }
                 }
         }
     }

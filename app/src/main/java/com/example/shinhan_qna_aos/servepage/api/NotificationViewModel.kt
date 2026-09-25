@@ -1,119 +1,137 @@
 package com.example.shinhan_qna_aos.servepage.api
 
-import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shinhan_qna_aos.debugLog
-import com.example.shinhan_qna_aos.main.api.Answer
+import com.example.shinhan_qna_aos.userMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+data class NotificationUiState(
+    val noticesList: List<Notices> = emptyList(),
+    val selectedNotice: Notices? = null,
+    val form: UiNoticesRequest = UiNoticesRequest(id = 0, title = "", content = "", editMode = false),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)
+
 class NotificationViewModel(private val repository: NotificationRepository) : ViewModel() {
-
-    private val _noticesList = MutableStateFlow<List<Notices>>(emptyList())
-    val noticesList = _noticesList.asStateFlow()
-
-    // 현재 선택된 단일 공지 상태
-    private val _selectedNotices = MutableStateFlow<Notices?>(null)
-    val selectedNotices = _selectedNotices.asStateFlow()
-
-    var noticesState by mutableStateOf(
-        UiNoticesRequest(
-            id=0,
-            title = "",
-            content = "",
-            editMode = false
-        )
-    )
+    private val _uiState = MutableStateFlow(NotificationUiState())
+    val uiState = _uiState.asStateFlow()
 
     fun onTitleChange(newTitle: String) {
-        noticesState = noticesState.copy(title = newTitle)
+        _uiState.update { it.copy(form = it.form.copy(title = newTitle)) }
     }
 
     fun onContentChange(newContent: String) {
-        noticesState = noticesState.copy(content = newContent)
+        _uiState.update { it.copy(form = it.form.copy(content = newContent)) }
     }
 
-    // 전체 공지 리스트 로드
     fun loadNotification(id: Int? = null) {
         viewModelScope.launch {
-            val result = repository.getNotification()
-            if (result.isSuccess) {
-                val list = result.getOrDefault(emptyList())
-                _noticesList.value = list
-
-                id?.let {
-                    val answer = list.find { it.id == id }
-                    _selectedNotices.value = answer
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            repository.getNotification()
+                .onSuccess { notices ->
+                    _uiState.update {
+                        it.copy(
+                            noticesList = notices,
+                            selectedNotice = id?.let { selectedId ->
+                                notices.find { notice -> notice.id == selectedId }
+                            } ?: it.selectedNotice,
+                            isLoading = false
+                        )
+                    }
                 }
-            }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("공지 목록을 불러오지 못했습니다.")
+                        )
+                    }
+                }
         }
     }
 
-    // 공지 작성
-    fun noticesWrite(onSusscess: () -> Unit) {
+    fun noticesWrite(onSuccess: () -> Unit) {
         viewModelScope.launch {
-            val result = repository.NoticesWrite(
-                noticesState.title,
-                noticesState.content
-            )
-            result
+            val form = _uiState.value.form
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            repository.NoticesWrite(form.title, form.content)
                 .onSuccess {
+                    _uiState.update { it.copy(isLoading = false) }
                     debugLog("NotificationViewModel", "공지를 작성했습니다.")
-                    onSusscess()
+                    onSuccess()
                     loadNotification()
                 }
-                .onFailure { debugLog("NotificationViewModel", "공지 생성에 실패했습니다.") }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("공지 생성에 실패했습니다.")
+                        )
+                    }
+                }
         }
     }
 
-    // 수정 모드 진입
-    fun NoticesEditMode(answerRequest: Notices?) {
-        noticesState = noticesState.copy(
-            id = answerRequest?.id ?: 0,
-            title = answerRequest?.title ?: "",
-            content = answerRequest?.content ?: "",
-            editMode = true
-        )
-    }
-    // 수정 사항 카피
-    fun noticesEditMode() {
-        noticesState = noticesState.copy(editMode = false)
+    fun NoticesEditMode(notice: Notices?) {
+        _uiState.update {
+            it.copy(
+                form = it.form.copy(
+                    id = notice?.id ?: 0,
+                    title = notice?.title ?: "",
+                    content = notice?.content ?: "",
+                    editMode = true
+                )
+            )
+        }
     }
 
-    // 게시글 수정
-    fun updateNotices(
-        id: String,
-        onSuccess: () -> Unit,
-        onError: () -> Unit
-    ) {
+    fun noticesEditMode() {
+        _uiState.update { it.copy(form = it.form.copy(editMode = false)) }
+    }
+
+    fun updateNotices(id: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
-            val result = repository.updateNoticesPost(
-                id = id,
-                title = noticesState.title,
-                content = noticesState.content,
-            )
-            result
+            val form = _uiState.value.form
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            repository.updateNoticesPost(id, form.title, form.content)
                 .onSuccess {
-                    noticesEditMode()
+                    _uiState.update {
+                        it.copy(form = it.form.copy(editMode = false), isLoading = false)
+                    }
                     onSuccess()
                 }
-                .onFailure { onError() }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("공지 수정에 실패했습니다.")
+                        )
+                    }
+                }
         }
     }
-    // 삭제
+
     fun deleteNotices(id: Int) {
         viewModelScope.launch {
-            val result = repository.NoticesDelete(id)
-            if (result.isSuccess) {
-                debugLog("NotificationViewModel", "공지를 삭제했습니다.")
-            } else {
-                Log.e("NotificationViewModel", "공지 삭제에 실패했습니다.")
-            }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            repository.NoticesDelete(id)
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false) }
+                    debugLog("NotificationViewModel", "공지를 삭제했습니다.")
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("공지 삭제에 실패했습니다.")
+                        )
+                    }
+                }
         }
     }
 }

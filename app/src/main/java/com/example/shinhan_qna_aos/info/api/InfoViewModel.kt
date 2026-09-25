@@ -5,83 +5,102 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shinhan_qna_aos.ImageUtils
+import com.example.shinhan_qna_aos.userMessage
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+
+data class InfoUiState(
+    val form: InfoData = InfoData(),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)
 
 class InfoViewModel(
     private val infoRepository: InfoRepository
 ) : ViewModel() {
+    private val _uiState = MutableStateFlow(InfoUiState())
+    val uiState = _uiState.asStateFlow()
 
-    // UI 상태를 나타내는 StateFlow, 외부에는 읽기전용으로 노출
-    private val _uiState = MutableStateFlow(InfoData())
-    var uiState: StateFlow<InfoData> = _uiState.asStateFlow()
-
-    private val _submitError = MutableStateFlow<String?>(null)
-    val submitError = _submitError.asStateFlow()
-
-
-    // 이름 변경 시 호출, infoData 내 name 값 갱신
     fun onNameChange(newName: String) {
-        _uiState.value =
-            _uiState.value.copy(name = newName)
+        _uiState.update { it.copy(form = it.form.copy(name = newName)) }
     }
 
-    // 학번(학생 번호) 변경 시 호출, 문자열을 정수로 변환 후 갱신 (변환 실패 시 0으로 초기화)
     fun onStudentIdChange(newId: String) {
-        _uiState.value =
-            _uiState.value.copy(students = newId.toIntOrNull() ?: 0)
+        _uiState.update {
+            it.copy(form = it.form.copy(students = newId.toIntOrNull() ?: 0))
+        }
     }
 
-    // 학년 변경 시 호출, "학년" 접미사 제거 후 정수로 변환하며 기본값 0 처리
     fun onGradeChange(newGrade: String) {
-        val gradeInt = newGrade.removeSuffix("학년").toIntOrNull() ?: 0
-        _uiState.value =
-            _uiState.value.copy(year = gradeInt)
+        _uiState.update {
+            it.copy(
+                form = it.form.copy(year = newGrade.removeSuffix("학년").toIntOrNull() ?: 0)
+            )
+        }
     }
 
-    // 전공(학과) 변경 시 호출, infoData 내 department 값 갱신
     fun onMajorChange(newMajor: String) {
-        _uiState.value =
-            _uiState.value.copy(department = newMajor)
+        _uiState.update { it.copy(form = it.form.copy(department = newMajor)) }
     }
 
-    // 이미지 변경 시 호출, 단순히 Uri 값만 infoData에 저장
     fun onImageChange(uri: Uri) {
-        _uiState.value =
-            _uiState.value.copy(imageUri = uri)
+        _uiState.update { it.copy(form = it.form.copy(imageUri = uri)) }
     }
 
-    /**
-     * 학생 정보 제출 (서버 업로드 후 상태 체크 및 분기)
-     */
     fun submitStudentInfo(
         context: Context,
         reapplying: Boolean,
         onSuccess: (Boolean) -> Unit
     ) {
         viewModelScope.launch {
-            _submitError.value = null
-            val imageUri = _uiState.value.imageUri
-            val compressedFile = ImageUtils.compressImage(context, imageUri)
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            val state = _uiState.value
+            val compressedFile = ImageUtils.compressImage(context, state.form.imageUri)
             if (compressedFile == null) {
-                _submitError.value = "이미지를 처리하지 못했습니다. 다시 선택해 주세요."
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = "이미지를 처리하지 못했습니다. 다시 선택해 주세요."
+                    )
+                }
                 return@launch
             }
 
-            val submitResult = infoRepository.submitStudentInfo(_uiState.value, compressedFile)
-            if (submitResult.isSuccess) {
-                if (reapplying) {
-                    if (infoRepository.requestReapplication().isFailure) {
-                        _submitError.value = "신청 상태 변경에 실패했습니다. 다시 시도해 주세요."
-                        return@launch
+            infoRepository.submitStudentInfo(state.form, compressedFile)
+                .onSuccess {
+                    if (reapplying) {
+                        infoRepository.requestReapplication()
+                            .onSuccess {
+                                _uiState.update { it.copy(isLoading = false) }
+                                onSuccess(true)
+                            }
+                            .onFailure { error ->
+                                _uiState.update {
+                                    it.copy(
+                                        isLoading = false,
+                                        errorMessage = error.userMessage(
+                                            "신청 상태 변경에 실패했습니다. 다시 시도해 주세요."
+                                        )
+                                    )
+                                }
+                            }
+                    } else {
+                        _uiState.update { it.copy(isLoading = false) }
+                        onSuccess(false)
                     }
                 }
-                onSuccess(reapplying)
-            } else {
-                _submitError.value = "학생 정보 제출에 실패했습니다. 다시 시도해 주세요."
-            }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage(
+                                "학생 정보 제출에 실패했습니다. 다시 시도해 주세요."
+                            )
+                        )
+                    }
+                }
         }
     }
 }

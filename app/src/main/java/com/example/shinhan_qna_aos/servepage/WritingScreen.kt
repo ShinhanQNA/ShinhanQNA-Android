@@ -28,6 +28,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -66,8 +69,17 @@ fun WritingScreen(
     val answerViewModel: AnswerViewModel =
         viewModel(factory = SimpleViewModelFactory { AnswerViewModel(answerRepository) })
 
-    val state = writingViewModel.state
-    val answerstae = answerViewModel.answerstate
+    val writingUiState by writingViewModel.uiState.collectAsState()
+    val answerUiState by answerViewModel.uiState.collectAsState()
+    val state = writingUiState.form
+    val answerstae = answerUiState.form
+
+    LaunchedEffect(writingUiState.errorMessage) {
+        writingUiState.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            writingViewModel.clearError()
+        }
+    }
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             uri?.let {
@@ -153,7 +165,7 @@ fun WritingScreen(
                 .clickable {
                     if (isAdmin) {
                         answerViewModel.writeAnswer(
-                            onSusscess = {
+                            onSuccess = {
                                 navController.navigate("main?selectedTab=2") {
                                     popUpTo("writeBoard") { inclusive = true }
                                 }
@@ -165,10 +177,6 @@ fun WritingScreen(
                                 navController.navigate("main?selectedTab=0") {
                                     popUpTo("writeBoard") { inclusive = true }
                                 }
-                            },
-                            onError = {
-                                Toast.makeText(context, "게시글 작성이 실패하였습니다", Toast.LENGTH_SHORT)
-                                    .show()
                             }
                         )
                     }

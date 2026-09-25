@@ -17,6 +17,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -40,6 +42,7 @@ import com.jihan.lucide_icons.lucide
 @Composable
 fun AppealScreen1(appealRepository: AppealRepository, data: Data, navController: NavController) {
     val appealViewModel: AppealViewModel = viewModel(factory = SimpleViewModelFactory { AppealViewModel(appealRepository) })
+    val uiState by appealViewModel.uiState.collectAsState()
 
     // userEmail 안전하게 가져오기 (기본값 or 안내 메시지 할당)
     val userEmail = data.userEmail ?: ""
@@ -51,7 +54,7 @@ fun AppealScreen1(appealRepository: AppealRepository, data: Data, navController:
         }
     }
     // ViewModel에서 받은 단일 차단 사유 데이터
-    val blockReasonList = appealViewModel.blockReasonData?.blockReasons ?: emptyList()
+    val blockReasonList = uiState.blockReasonData?.blockReasons ?: emptyList()
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -145,6 +148,7 @@ fun AppealScreen2(
 ) {
 
     val appealViewModel: AppealViewModel = viewModel(factory = SimpleViewModelFactory { AppealViewModel(appealRepository) })
+    val uiState by appealViewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -223,7 +227,7 @@ fun AppealScreen2(
                 ),
             )
         }
-        appealViewModel.errorMessage?.let { message ->
+        uiState.errorMessage?.let { message ->
             Text(text = message, color = Color(0xffFC4F4F))
         }
     }

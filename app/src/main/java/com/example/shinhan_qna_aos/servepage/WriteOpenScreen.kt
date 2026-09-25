@@ -29,6 +29,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -78,8 +79,24 @@ fun WriteOpenScreen(
     val writingViewModel: WritingViewModel =
         viewModel(factory = SimpleViewModelFactory { WritingViewModel(writeRepository) })
 
-    val postDetail = postViewModel.selectedPost
-    val uiState = writingViewModel.state   // 현재 화면 상태
+    val postUiState by postViewModel.uiState.collectAsState()
+    val postDetail = postUiState.selectedPost
+    val writingUiState by writingViewModel.uiState.collectAsState()
+    val uiState = writingUiState.form
+
+    LaunchedEffect(writingUiState.errorMessage) {
+        writingUiState.errorMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            writingViewModel.clearError()
+        }
+    }
+
+    LaunchedEffect(postUiState.successMessage) {
+        postUiState.successMessage?.let {
+            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            postViewModel.clearSuccessMessage()
+        }
+    }
 
     // 이미지 선택 런처
     val launcher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -158,7 +175,7 @@ fun WriteOpenScreen(
                                     FlagLikeButton(
                                         onFlagClick = {
                                             debugLog("WriteOpenScreen", "신고 버튼을 눌렀습니다.")
-                                            postViewModel.flagPost(postId.toInt(), "",context)
+                                            postViewModel.flagPost(postId.toInt(), "")
                                             postViewModel.loadPostDetail(postId)
                                         },
                                         onLikeClick = {
@@ -276,9 +293,6 @@ fun EditPostContent(
                             postViewModel.loadPostDetail(postId) // 상세 조회 로드
                             postViewModel.loadPosts() // 전체 조회 로드
                             navController.navigate("writeOpen/$postId")
-                        },
-                        onError = {
-                            Toast.makeText(context, "게시글 수정 실패", Toast.LENGTH_SHORT).show()
                         }
                     )
                 }

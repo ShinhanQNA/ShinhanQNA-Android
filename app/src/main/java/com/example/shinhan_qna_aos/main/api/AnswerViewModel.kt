@@ -1,120 +1,134 @@
 package com.example.shinhan_qna_aos.main.api
 
-import android.util.Log
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shinhan_qna_aos.debugLog
+import com.example.shinhan_qna_aos.userMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+data class AnswerUiState(
+    val answerList: List<Answer> = emptyList(),
+    val selectedAnswer: Answer? = null,
+    val form: UiAnswerRequest = UiAnswerRequest(title = "", content = "", editMode = false),
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)
+
 class AnswerViewModel(private val repository: AnswerRepository) : ViewModel() {
+    private val _uiState = MutableStateFlow(AnswerUiState())
+    val uiState = _uiState.asStateFlow()
 
-    private val _answerList = MutableStateFlow<List<Answer>>(emptyList())
-    val answerList = _answerList.asStateFlow()
-
-    // 현재 선택된 단일 답변 상태
-    private val _selectedAnswer = MutableStateFlow<Answer?>(null)
-    val selectedAnswer = _selectedAnswer.asStateFlow()
-
-    var answerstate by mutableStateOf(UiAnswerRequest(
-        title = "",
-        content = "",
-        editMode = false
-        )
-    )
-
-    // 제목 입력 변경 시 호출
     fun onTitleChange(newTitle: String) {
-        answerstate = answerstate.copy(title = newTitle)
+        _uiState.update { it.copy(form = it.form.copy(title = newTitle)) }
     }
 
-    // 내용 입력 변경 시 호출
     fun onContentChange(newContent: String) {
-        answerstate = answerstate.copy(content = newContent)
+        _uiState.update { it.copy(form = it.form.copy(content = newContent)) }
     }
 
-    // 전체 답변 리스트 로드
     fun loadAnswers() {
         viewModelScope.launch {
-            val result = repository.getAnswers()
-            if (result.isSuccess) {
-                val list = result.getOrDefault(emptyList())
-                _answerList.value = list
-            } else {
-                // 에러 처리 로직 추가 가능
-            }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            repository.getAnswers()
+                .onSuccess { answers ->
+                    _uiState.update { it.copy(answerList = answers, isLoading = false) }
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("답변 목록을 불러오지 못했습니다.")
+                        )
+                    }
+                }
         }
     }
 
-    // id 기준 단일 답변을 리스트에서 검색하여 선택 상태에 설정
     fun selectAnswerById(id: Int) {
-        val answer = _answerList.value.find { it.id == id }
-        _selectedAnswer.value = answer
+        _uiState.update { state ->
+            state.copy(selectedAnswer = state.answerList.find { it.id == id })
+        }
     }
 
-    // 답변 작성
-    fun writeAnswer(onSusscess: () -> Unit) {
+    fun writeAnswer(onSuccess: () -> Unit) {
         viewModelScope.launch {
-            val result = repository.AnswerWrite(
-                answerstate.title,
-                answerstate.content
-            )
-            result
+            val form = _uiState.value.form
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            repository.AnswerWrite(form.title, form.content)
                 .onSuccess {
+                    _uiState.update { it.copy(isLoading = false) }
                     debugLog("AnswerViewModel", "답변을 작성했습니다.")
-                    onSusscess()
+                    onSuccess()
                     loadAnswers()
                 }
-                .onFailure { debugLog("AnswerViewModel", "답변 생성에 실패했습니다.") }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("답변 생성에 실패했습니다.")
+                        )
+                    }
+                }
         }
     }
 
-    // 수정 모드 진입
     fun AnswerEditMode(answerRequest: Answer?) {
-        answerstate = answerstate.copy(
-            title = answerRequest?.title ?: "",
-            content = answerRequest?.content ?: "",
-            editMode = true
-        )
-    }
-    // 수정 사항 카피
-    fun answerEditMode() {
-        answerstate = answerstate.copy(editMode = false)
+        _uiState.update {
+            it.copy(
+                form = it.form.copy(
+                    title = answerRequest?.title ?: "",
+                    content = answerRequest?.content ?: "",
+                    editMode = true
+                )
+            )
+        }
     }
 
-    // 게시글 수정
-    fun updateAnswerPost(
-        id: String,
-        onSuccess: () -> Unit,
-        onError: () -> Unit
-    ) {
+    fun answerEditMode() {
+        _uiState.update { it.copy(form = it.form.copy(editMode = false)) }
+    }
+
+    fun updateAnswerPost(id: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
-            val result = repository.updateAnswerPost(
-                id = id,
-                title = answerstate.title,
-                content = answerstate.content,
-            )
-            result
+            val form = _uiState.value.form
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            repository.updateAnswerPost(id, form.title, form.content)
                 .onSuccess {
-                    answerEditMode()
+                    _uiState.update {
+                        it.copy(form = it.form.copy(editMode = false), isLoading = false)
+                    }
                     onSuccess()
                 }
-                .onFailure { onError() }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("답변 수정에 실패했습니다.")
+                        )
+                    }
+                }
         }
     }
-    // 삭제
+
     fun deleteAnswerPost(id: Int) {
         viewModelScope.launch {
-            val result = repository.AnswerDelete(id)
-            if (result.isSuccess) {
-                debugLog("AnswerViewModel", "답변을 삭제했습니다.")
-            } else {
-                Log.e("AnswerViewModel", "답변 삭제에 실패했습니다.")
-            }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            repository.AnswerDelete(id)
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false) }
+                    debugLog("AnswerViewModel", "답변을 삭제했습니다.")
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("답변 삭제에 실패했습니다.")
+                        )
+                    }
+                }
         }
     }
 }
