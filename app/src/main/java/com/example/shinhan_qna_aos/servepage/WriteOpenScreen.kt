@@ -135,7 +135,6 @@ fun WriteOpenScreen(
                         launcher = launcher,
                         context = context,
                         postId = postId,
-                        navController = navController,
                         postViewModel = postViewModel,
                         isLoading = writingUiState.isLoading,
                         errorMessage = writingUiState.errorMessage
@@ -238,7 +237,6 @@ fun EditPostContent(
     launcher: ManagedActivityResultLauncher<String, Uri?>,
     context: Context,
     postId: String,
-    navController: NavController,
     postViewModel: PostViewModel,
     isLoading: Boolean,
     errorMessage: String?
@@ -324,7 +322,7 @@ fun EditPostContent(
                     writingViewModel.updatePost(
                         postId = postId,
                         onSuccess = {
-                            navController.navigate("writeOpen/$postId")
+                            postViewModel.loadPostDetail(postId)
                         }
                     )
                 }

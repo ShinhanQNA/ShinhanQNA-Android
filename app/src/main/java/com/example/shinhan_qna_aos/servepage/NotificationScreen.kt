@@ -173,7 +173,6 @@ fun NotificationOpenScreen(id:Int, isAdmin: Boolean, notificationRepository: Not
                 uiState = uiState,
                 notificationViewModel = notificationViewModel,
                 id = id.toString(),
-                navController = navController,
                 isLoading = state.isLoading,
                 errorMessage = state.errorMessage
             )

@@ -146,7 +146,6 @@ fun NoticesEditPostContent(
     uiState: UiNoticesRequest,
     notificationViewModel: NotificationViewModel,
     id: String,
-    navController: NavController,
     isLoading: Boolean,
     errorMessage: String?,
 ) {
@@ -203,7 +202,7 @@ fun NoticesEditPostContent(
                     notificationViewModel.updateNotices(
                         id = id,
                         onSuccess = {
-                            navController.navigate("notices/$id")
+                            notificationViewModel.loadNotification(id.toInt())
                         }
                     )
                 }
