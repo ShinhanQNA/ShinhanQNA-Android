@@ -115,7 +115,7 @@ fun NotificationWriteScreen(notificationRepository: NotificationRepository,navCo
                     notificationViewModel.noticesWrite(
                         onSuccess = {
                             navController.navigate("notices") {
-                                popUpTo("notification_write") { inclusive = true }
+                                popUpTo("notices_write") { inclusive = true }
                             }
                         }
                     )
