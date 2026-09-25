@@ -109,12 +109,13 @@ class PostViewModel(
         _uiState.update { it.copy(successMessage = null) }
     }
 
-    fun deletePost(postId: Int) {
+    fun deletePost(postId: Int, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             postRepository.PostDelete(postId)
                 .onSuccess {
                     _uiState.update { it.copy(isLoading = false) }
+                    onSuccess()
                     debugLog("PostViewModel", "게시글을 삭제했습니다.")
                 }
                 .onFailure { error ->

@@ -116,12 +116,13 @@ class NotificationViewModel(private val repository: NotificationRepository) : Vi
         }
     }
 
-    fun deleteNotices(id: Int) {
+    fun deleteNotices(id: Int, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             repository.NoticesDelete(id)
                 .onSuccess {
                     _uiState.update { it.copy(isLoading = false) }
+                    onSuccess()
                     debugLog("NotificationViewModel", "공지를 삭제했습니다.")
                 }
                 .onFailure { error ->

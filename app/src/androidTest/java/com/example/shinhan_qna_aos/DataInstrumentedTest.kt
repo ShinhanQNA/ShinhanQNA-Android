@@ -25,7 +25,7 @@ class DataInstrumentedTest {
             assertNotEquals("access-token", storedAccessToken)
             assertEquals("access-token", data.accessToken)
         } finally {
-            data.clearTokens()
+            data.clearAccountData()
         }
     }
 

@@ -113,12 +113,13 @@ class AnswerViewModel(private val repository: AnswerRepository) : ViewModel() {
         }
     }
 
-    fun deleteAnswerPost(id: Int) {
+    fun deleteAnswerPost(id: Int, onSuccess: () -> Unit) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             repository.AnswerDelete(id)
                 .onSuccess {
                     _uiState.update { it.copy(isLoading = false) }
+                    onSuccess()
                     debugLog("AnswerViewModel", "답변을 삭제했습니다.")
                 }
                 .onFailure { error ->
