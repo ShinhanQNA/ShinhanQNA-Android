@@ -26,7 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -57,7 +57,7 @@ fun AccessionScreen(
     navController: NavController
 ) {
     val accessionViewModel: AccessionViewModel = viewModel(factory = SimpleViewModelFactory { AccessionViewModel(accessionRepository) })
-    val uiState by accessionViewModel.uiState.collectAsState()
+    val uiState by accessionViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
         accessionViewModel.LoadAccession()
@@ -112,7 +112,7 @@ fun AccessionDetailScreen(
 ) {
     val accessionViewModel: AccessionViewModel =
         viewModel(factory = SimpleViewModelFactory { AccessionViewModel(accessionRepository) })
-    val uiState by accessionViewModel.uiState.collectAsState()
+    val uiState by accessionViewModel.uiState.collectAsStateWithLifecycle()
     val accessionDetail = uiState.accessionDetail
 
     // 상세 데이터 이메일로 불러오기

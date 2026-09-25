@@ -29,7 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,8 +69,8 @@ fun WritingScreen(
     val answerViewModel: AnswerViewModel =
         viewModel(factory = SimpleViewModelFactory { AnswerViewModel(answerRepository) })
 
-    val writingUiState by writingViewModel.uiState.collectAsState()
-    val answerUiState by answerViewModel.uiState.collectAsState()
+    val writingUiState by writingViewModel.uiState.collectAsStateWithLifecycle()
+    val answerUiState by answerViewModel.uiState.collectAsStateWithLifecycle()
     val state = writingUiState.form
     val answerstae = answerUiState.form
 

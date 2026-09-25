@@ -29,7 +29,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,9 +79,9 @@ fun WriteOpenScreen(
     val writingViewModel: WritingViewModel =
         viewModel(factory = SimpleViewModelFactory { WritingViewModel(writeRepository) })
 
-    val postUiState by postViewModel.uiState.collectAsState()
+    val postUiState by postViewModel.uiState.collectAsStateWithLifecycle()
     val postDetail = postUiState.selectedPost
-    val writingUiState by writingViewModel.uiState.collectAsState()
+    val writingUiState by writingViewModel.uiState.collectAsStateWithLifecycle()
     val uiState = writingUiState.form
 
     LaunchedEffect(writingUiState.errorMessage) {

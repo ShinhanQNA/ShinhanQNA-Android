@@ -31,7 +31,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,7 +62,7 @@ fun InformationScreen(
 ) {
     val context = LocalContext.current
 
-    val uiState by infoViewModel.uiState.collectAsState()
+    val uiState by infoViewModel.uiState.collectAsStateWithLifecycle()
     val form = uiState.form
     // 드랍시트 관리
     var expandedGrade by remember { mutableStateOf(false) }
@@ -286,7 +286,7 @@ fun MajorDropdown(
 @Composable
 fun ImageInsert(viewModel: InfoViewModel, fontSize: TextUnit) {
 
-    val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val imageUri = uiState.form.imageUri
 
     val launcher =

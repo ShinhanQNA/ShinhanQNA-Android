@@ -31,7 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -73,7 +73,7 @@ fun SelectedOpinionsScreen(twPostRepository: TWPostRepository, isAdmin: Boolean,
     val twPostViewModel: TWPostViewModel =
         viewModel(factory = SimpleViewModelFactory { TWPostViewModel(twPostRepository) })
 
-    val uiState by twPostViewModel.uiState.collectAsState()
+    val uiState by twPostViewModel.uiState.collectAsStateWithLifecycle()
     val opinions = uiState.opinions
 
     // 주기적 로딩 작업을 관리하는 Job 상태
@@ -144,7 +144,7 @@ fun SelectedOpenScreen(
         factory = SimpleViewModelFactory { TWPostViewModel(twPostRepository) }
     )
 
-    val uiState by twPostViewModel.uiState.collectAsState()
+    val uiState by twPostViewModel.uiState.collectAsStateWithLifecycle()
     val groupDetailList = uiState.groupDetailList
     val selectedSort = uiState.selectedSort
     val selectedYear = uiState.selectedYear
@@ -221,7 +221,7 @@ fun SelectedDetailScreen(
     val twPostViewModel: TWPostViewModel =
         viewModel(factory = SimpleViewModelFactory { TWPostViewModel(twPostRepository) })
 
-    val uiState by twPostViewModel.uiState.collectAsState()
+    val uiState by twPostViewModel.uiState.collectAsStateWithLifecycle()
     val selectedSort = uiState.selectedSort
     val groupDetailList = uiState.groupDetailList
     // 화면 최초 진입 시 groupId, 기본 정렬 'date'로 상세 글 리스트 로드

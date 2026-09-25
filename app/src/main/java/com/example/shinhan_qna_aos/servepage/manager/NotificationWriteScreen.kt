@@ -19,7 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,7 +47,7 @@ fun NotificationWriteScreen(notificationRepository: NotificationRepository,navCo
     val notificationViewModel: NotificationViewModel =
         viewModel(factory = SimpleViewModelFactory { NotificationViewModel(notificationRepository) })
 
-    val uiState by notificationViewModel.uiState.collectAsState()
+    val uiState by notificationViewModel.uiState.collectAsStateWithLifecycle()
     val noticesstate = uiState.form
 
     Box(

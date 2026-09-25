@@ -22,7 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,7 +56,7 @@ fun NotificationScreen(isAdmin: Boolean, notificationRepository: NotificationRep
         notificationViewModel.loadNotification()
     }
 
-    val uiState by notificationViewModel.uiState.collectAsState()
+    val uiState by notificationViewModel.uiState.collectAsStateWithLifecycle()
     val noticesList = uiState.noticesList
 
     Column(
@@ -137,7 +137,7 @@ fun NotificationOpenScreen(id:Int, isAdmin: Boolean, notificationRepository: Not
         notificationViewModel.loadNotification(id)
     }
 
-    val state by notificationViewModel.uiState.collectAsState()
+    val state by notificationViewModel.uiState.collectAsStateWithLifecycle()
     val selectedNotices = state.selectedNotice
     val uiState = state.form
 

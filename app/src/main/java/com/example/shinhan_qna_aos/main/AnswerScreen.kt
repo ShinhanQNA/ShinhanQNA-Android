@@ -23,7 +23,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,7 +65,7 @@ fun AnsweredScreen(answerRepository: AnswerRepository, navController: NavControl
     val answerViewModel: AnswerViewModel =
         viewModel(factory = SimpleViewModelFactory { AnswerViewModel(answerRepository) })
 
-    val uiState by answerViewModel.uiState.collectAsState()
+    val uiState by answerViewModel.uiState.collectAsStateWithLifecycle()
     val answerList = uiState.answerList
 
 // 주기적 로딩 작업을 관리하는 Job 상태
@@ -125,7 +125,7 @@ fun AnsweredOpenScreen(
     val answerViewModel: AnswerViewModel =
         viewModel(factory = SimpleViewModelFactory { AnswerViewModel(answerRepository) })
 
-    val state by answerViewModel.uiState.collectAsState()
+    val state by answerViewModel.uiState.collectAsStateWithLifecycle()
     val selectedAnswer = state.selectedAnswer
     val answerList = state.answerList
     val uiState = state.form

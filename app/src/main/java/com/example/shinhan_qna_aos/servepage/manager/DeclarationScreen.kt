@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -65,9 +65,9 @@ fun DeclarationScreen(
     val declarationViewModel: DeclarationViewModel = viewModel(factory = SimpleViewModelFactory {DeclarationViewModel(declarationRepository)})
     val postViewModel: PostViewModel = viewModel(factory = SimpleViewModelFactory {PostViewModel(postRepository)})
 
-    val declarationUiState by declarationViewModel.uiState.collectAsState()
+    val declarationUiState by declarationViewModel.uiState.collectAsStateWithLifecycle()
     val declarationList = declarationUiState.declarationList
-    val postUiState by postViewModel.uiState.collectAsState()
+    val postUiState by postViewModel.uiState.collectAsStateWithLifecycle()
     val postList = postUiState.postList
 
     LaunchedEffect(Unit) {
@@ -134,7 +134,7 @@ fun DeclarationOpenScreen(postId: String, reportId: Int, navController: NavContr
 
     val postViewModel: PostViewModel = viewModel(factory = SimpleViewModelFactory {PostViewModel(postRepository)})
     val declarationViewModel: DeclarationViewModel = viewModel(factory = SimpleViewModelFactory {DeclarationViewModel(declarationRepository)})
-    val declarationUiState by declarationViewModel.uiState.collectAsState()
+    val declarationUiState by declarationViewModel.uiState.collectAsStateWithLifecycle()
 
     var showSheet by remember { mutableStateOf(false) } // 사유 작성
     var reason by remember { mutableStateOf("") } // 사유
@@ -144,7 +144,7 @@ fun DeclarationOpenScreen(postId: String, reportId: Int, navController: NavContr
         postViewModel.loadPostDetail(postId)
     }
 
-    val postUiState by postViewModel.uiState.collectAsState()
+    val postUiState by postViewModel.uiState.collectAsStateWithLifecycle()
     val postDetail = postUiState.selectedPost
     val writerEmail = postDetail?.writerEmail ?: ""
 

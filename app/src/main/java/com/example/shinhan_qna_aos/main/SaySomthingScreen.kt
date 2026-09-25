@@ -4,7 +4,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Divider
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -31,7 +31,7 @@ fun SaySomthingScreen(postRepository: PostRepository, isAdmin: Boolean, navContr
     val postViewModel: PostViewModel =
         viewModel(factory = SimpleViewModelFactory { PostViewModel(postRepository) })
 
-    val uiState by postViewModel.uiState.collectAsState()
+    val uiState by postViewModel.uiState.collectAsStateWithLifecycle()
     val dataList = uiState.postList
 
     // 주기적 로딩 작업을 관리하는 Job 상태
