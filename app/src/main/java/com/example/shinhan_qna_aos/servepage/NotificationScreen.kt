@@ -56,7 +56,8 @@ fun NotificationScreen(isAdmin: Boolean, notificationRepository: NotificationRep
         notificationViewModel.loadNotification()
     }
 
-    val noticesList by notificationViewModel.noticesList.collectAsState()
+    val uiState by notificationViewModel.uiState.collectAsState()
+    val noticesList = uiState.noticesList
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -136,8 +137,9 @@ fun NotificationOpenScreen(id:Int, isAdmin: Boolean, notificationRepository: Not
         notificationViewModel.loadNotification(id)
     }
 
-    val selectedNotices by notificationViewModel.selectedNotices.collectAsState()
-    val uiState = notificationViewModel.noticesState
+    val state by notificationViewModel.uiState.collectAsState()
+    val selectedNotices = state.selectedNotice
+    val uiState = state.form
 
     Column(modifier = Modifier.systemBarsPadding().fillMaxSize().background(Color.White)) {
         TopBar(if (uiState.editMode) "게시글 수정" else null) {

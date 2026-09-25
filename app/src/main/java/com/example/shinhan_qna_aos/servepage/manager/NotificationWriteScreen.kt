@@ -19,6 +19,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,7 +47,8 @@ fun NotificationWriteScreen(notificationRepository: NotificationRepository,navCo
     val notificationViewModel: NotificationViewModel =
         viewModel(factory = SimpleViewModelFactory { NotificationViewModel(notificationRepository) })
 
-    val noticesstate = notificationViewModel.noticesState
+    val uiState by notificationViewModel.uiState.collectAsState()
+    val noticesstate = uiState.form
 
     Box(
         modifier = Modifier
@@ -103,7 +106,7 @@ fun NotificationWriteScreen(notificationRepository: NotificationRepository,navCo
                 .padding(horizontal = 18.dp, vertical = 12.dp)
                 .clickable {
                     notificationViewModel.noticesWrite(
-                        onSusscess = {
+                        onSuccess = {
                             navController.navigate("notices") {
                                 popUpTo("notification_write") { inclusive = true }
                             }
@@ -188,9 +191,6 @@ fun NoticesEditPostContent(
                             notificationViewModel.loadNotification(id.toInt()) // 상세 조회 로드
                             notificationViewModel.loadNotification() // 전체 조회 로드
                             navController.navigate("notices/$id")
-                        },
-                        onError = {
-//                            Toast.makeText(context, "답변 게시글 수정 실패", Toast.LENGTH_SHORT).show()
                         }
                     )
                 }
