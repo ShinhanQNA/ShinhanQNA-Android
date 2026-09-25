@@ -2,107 +2,130 @@ package com.example.shinhan_qna_aos.servepage.api
 
 import android.content.Context
 import android.net.Uri
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shinhan_qna_aos.ImageUtils
 import com.example.shinhan_qna_aos.main.api.PostDetail
+import com.example.shinhan_qna_aos.userMessage
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
+
+data class WritingUiState(
+    val form: WriteData = WriteData(title = "", content = "", imageUri = null, isEditMode = false),
+    val compressedImageFile: File? = null,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null
+)
 
 class WritingViewModel(
     private val writeRepository: WriteRepository
 ) : ViewModel() {
+    private val _uiState = MutableStateFlow(WritingUiState())
+    val uiState = _uiState.asStateFlow()
 
-    // 파일 압축 결과 저장 (이미지 파일)
-    var compressedImageFile: File? by mutableStateOf(null)
-        private set
-
-    // Compose에서 상태 관찰 (제목, 내용, 카테고리, 이미지 URI)
-    var state by mutableStateOf(
-        WriteData(
-            title = "",
-            content = "",
-            imageUri = null,
-            isEditMode = false
-        )
-    )
-        private set
-
-    // 제목 입력 변경 시 호출
     fun onTitleChange(newTitle: String) {
-        state = state.copy(title = newTitle)
+        _uiState.update { it.copy(form = it.form.copy(title = newTitle)) }
     }
 
-    // 내용 입력 변경 시 호출
     fun onContentChange(newContent: String) {
-        state = state.copy(content = newContent)
+        _uiState.update { it.copy(form = it.form.copy(content = newContent)) }
     }
 
-    // 이미지 선택 시 호출: URI저장 + 비동기로 압축 파일 저장
     fun onImageChange(context: Context, uri: Uri) {
-        state = state.copy(imageUri = uri)
+        _uiState.update {
+            it.copy(form = it.form.copy(imageUri = uri), isLoading = true, errorMessage = null)
+        }
         viewModelScope.launch {
-            // 이미지 압축 유틸 호출(압축 결과를 File로 저장)
-            compressedImageFile = ImageUtils.compressImage(context, uri)
+            val file = ImageUtils.compressImage(context, uri)
+            _uiState.update {
+                it.copy(
+                    compressedImageFile = file,
+                    isLoading = false
+                )
+            }
         }
     }
 
-    // ✅ 수정 모드 진입
     fun enterEditMode(postDetail: PostDetail, context: Context) {
-        state = state.copy(
-            title = postDetail.title,
-            content = postDetail.content,
-            imageUri = postDetail.imagePath?.toUri(),
-            isEditMode = true
-        )
+        _uiState.update {
+            it.copy(
+                form = it.form.copy(
+                    title = postDetail.title,
+                    content = postDetail.content,
+                    imageUri = postDetail.imagePath?.toUri(),
+                    isEditMode = true
+                ),
+                errorMessage = null
+            )
+        }
         postDetail.imagePath?.let { imagePath ->
             viewModelScope.launch {
-                compressedImageFile = ImageUtils.compressImage(context, imagePath.toUri())
+                val file = ImageUtils.compressImage(context, imagePath.toUri())
+                _uiState.update { it.copy(compressedImageFile = file) }
             }
         }
     }
 
     fun exitEditMode() {
-        state = state.copy(isEditMode = false)
+        _uiState.update { it.copy(form = it.form.copy(isEditMode = false)) }
     }
 
-    // 게시글 작성
-    fun uploadPost(onSuccess: () -> Unit, onError: (String) -> Unit) {
+    fun clearError() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
+
+    fun uploadPost(onSuccess: () -> Unit) {
         viewModelScope.launch {
-            val result = writeRepository.writeBoards(
-                title = state.title,
-                content = state.content,
-                imageFile = compressedImageFile // ← 여기서 이미지 압축 전달
+            val state = _uiState.value
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            writeRepository.writeBoards(
+                title = state.form.title,
+                content = state.form.content,
+                imageFile = state.compressedImageFile
             )
-            result
-                .onSuccess { onSuccess() }
-                .onFailure { onError(it.message ?: "알 수 없는 오류 발생") }
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false) }
+                    onSuccess()
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("게시글 작성에 실패했습니다.")
+                        )
+                    }
+                }
         }
     }
 
-    // 게시글 수정
-    fun updatePost(
-        postId: String,
-        onSuccess: () -> Unit,
-        onError: () -> Unit
-    ) {
+    fun updatePost(postId: String, onSuccess: () -> Unit) {
         viewModelScope.launch {
-            val result = writeRepository.updatePost(
+            val state = _uiState.value
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            writeRepository.updatePost(
                 postId = postId,
-                title = state.title,
-                content = state.content,
-                imageFile = compressedImageFile
+                title = state.form.title,
+                content = state.form.content,
+                imageFile = state.compressedImageFile
             )
-            result
                 .onSuccess {
-                    exitEditMode()
+                    _uiState.update {
+                        it.copy(form = it.form.copy(isEditMode = false), isLoading = false)
+                    }
                     onSuccess()
                 }
-                .onFailure { onError() }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("게시글 수정에 실패했습니다.")
+                        )
+                    }
+                }
         }
     }
 }

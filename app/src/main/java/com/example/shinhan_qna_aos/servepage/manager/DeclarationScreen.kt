@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
@@ -31,7 +32,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,8 +65,10 @@ fun DeclarationScreen(
     val declarationViewModel: DeclarationViewModel = viewModel(factory = SimpleViewModelFactory {DeclarationViewModel(declarationRepository)})
     val postViewModel: PostViewModel = viewModel(factory = SimpleViewModelFactory {PostViewModel(postRepository)})
 
-    val declarationList = declarationViewModel.declarationList
-    val postList by remember { derivedStateOf { postViewModel.postList } }
+    val declarationUiState by declarationViewModel.uiState.collectAsState()
+    val declarationList = declarationUiState.declarationList
+    val postUiState by postViewModel.uiState.collectAsState()
+    val postList = postUiState.postList
 
     LaunchedEffect(Unit) {
         declarationViewModel.LoadDeclaration()
@@ -132,6 +134,7 @@ fun DeclarationOpenScreen(postId: String, reportId: Int, navController: NavContr
 
     val postViewModel: PostViewModel = viewModel(factory = SimpleViewModelFactory {PostViewModel(postRepository)})
     val declarationViewModel: DeclarationViewModel = viewModel(factory = SimpleViewModelFactory {DeclarationViewModel(declarationRepository)})
+    val declarationUiState by declarationViewModel.uiState.collectAsState()
 
     var showSheet by remember { mutableStateOf(false) } // 사유 작성
     var reason by remember { mutableStateOf("") } // 사유
@@ -141,11 +144,12 @@ fun DeclarationOpenScreen(postId: String, reportId: Int, navController: NavContr
         postViewModel.loadPostDetail(postId)
     }
 
-    val postDetail = postViewModel.selectedPost
+    val postUiState by postViewModel.uiState.collectAsState()
+    val postDetail = postUiState.selectedPost
     val writerEmail = postDetail?.writerEmail ?: ""
 
     // API 호출 결과 감지하여 네비게이션 처리
-    val rejectResult = declarationViewModel.rejectResult
+    val rejectResult = declarationUiState.rejectResult
     LaunchedEffect(rejectResult) {
         if (rejectResult == true) {
             navController.popBackStack()

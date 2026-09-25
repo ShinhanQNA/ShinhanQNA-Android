@@ -1,147 +1,171 @@
 package com.example.shinhan_qna_aos.main.api
 
-import android.content.Context
-import android.util.Log
-import android.widget.Toast
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shinhan_qna_aos.debugLog
+import com.example.shinhan_qna_aos.userMessage
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+data class PostUiState(
+    val postList: List<TitleContentLike> = emptyList(),
+    val myPostList: List<MyPostData> = emptyList(),
+    val selectedPost: PostDetail? = null,
+    val hasLiked: Boolean = false,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val successMessage: String? = null
+)
+
 class PostViewModel(
-    private val postRepository: PostRepository,   // API 호출 담당
+    private val postRepository: PostRepository,
 ) : ViewModel() {
+    private val _uiState = MutableStateFlow(PostUiState())
+    val uiState = _uiState.asStateFlow()
 
-    // 게시글 리스트
-    var postList by mutableStateOf<List<TitleContentLike>>(emptyList())
-
-    // 내가 쓴 게시글 리스트
-    var myPostList by mutableStateOf<List<MyPostData>>(emptyList())
-        private set
-
-    var selectedPost by mutableStateOf<PostDetail?>(null)
-        private set
-
-    var errorMessage by mutableStateOf<String?>(null)
-        private set
-
-    // 좋아요 상태 (해당 게시글에 사용자가 좋아요 눌렀는지)
-    var hasLiked by mutableStateOf(false)
-        private set
-
-    /**
-     * 게시글 목록 로드
-     */
     fun loadPosts() {
         viewModelScope.launch {
-            postRepository.getPosts() // 나중에 관리자인 경우 sort 선택 가능(day,year,like) 유저는 day
-                .onSuccess {
-                    postList = it
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            postRepository.getPosts()
+                .onSuccess { posts ->
+                    _uiState.update { it.copy(postList = posts, isLoading = false) }
                 }
-                .onFailure { errorMessage = "게시글 목록을 불러오지 못했습니다." }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("게시글 목록을 불러오지 못했습니다.")
+                        )
+                    }
+                }
         }
     }
 
-    /**
-     * 게시글 상세 로드
-     */
     fun loadPostDetail(postId: String) {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             postRepository.getPostDetail(postId)
-                .onSuccess {
-                    selectedPost = it
+                .onSuccess { post ->
+                    _uiState.update { it.copy(selectedPost = post, isLoading = false) }
                 }
-                .onFailure {
-                    errorMessage = "게시글 상세 정보를 불러오지 못했습니다."
-                    Log.e("PostViewModel", "게시글 상세 정보를 불러오지 못했습니다.")
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("게시글 상세 정보를 불러오지 못했습니다.")
+                        )
+                    }
                 }
         }
     }
 
-    // 좋아요 토글 함수: 좋아요 <-> 좋아요 취소
     fun toggleLike(postId: Int) {
         viewModelScope.launch {
-            try {
-                val result = if (!hasLiked) {
-                    postRepository.PostLike(postId)
-                } else {
-                    postRepository.PostUnlike(postId)
-                }
-                if (result.isSuccess) {
-                    hasLiked = !hasLiked
-                    loadPostDetail(postId.toString())
-                } else {
-                    errorMessage = "공감 상태를 변경하지 못했습니다."
-                    Log.e("PostViewModel", "공감 상태를 변경하지 못했습니다.")
-                }
-            } catch (e: Exception) {
-                Log.e("PostViewModel", "공감 상태를 변경하지 못했습니다.")
+            val hasLiked = _uiState.value.hasLiked
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            val result = if (hasLiked) {
+                postRepository.PostUnlike(postId)
+            } else {
+                postRepository.PostLike(postId)
             }
+            result
+                .onSuccess {
+                    _uiState.update { it.copy(hasLiked = !hasLiked, isLoading = false) }
+                    loadPostDetail(postId.toString())
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("공감 상태를 변경하지 못했습니다.")
+                        )
+                    }
+                }
         }
     }
-    // 신고 관련
-    fun flagPost(
-        postId: Int,
-        reportReason: String?,
-        context: Context
-    ) {
+
+    fun flagPost(postId: Int, reportReason: String?) {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             postRepository.Postflag(postId, reportReason)
                 .onSuccess {
+                    _uiState.update { it.copy(isLoading = false, successMessage = "신고 되었습니다.") }
                     loadPostDetail(postId.toString())
-                    Toast.makeText(context, "신고 되었습니다.", Toast.LENGTH_SHORT).show()
                 }
-                .onFailure { errorMessage = "게시글 신고에 실패했습니다." }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("게시글 신고에 실패했습니다.")
+                        )
+                    }
+                }
         }
     }
 
-    // 삭제
+    fun clearSuccessMessage() {
+        _uiState.update { it.copy(successMessage = null) }
+    }
+
     fun deletePost(postId: Int) {
         viewModelScope.launch {
-            val result = postRepository.PostDelete(postId)
-            if (result.isSuccess) {
-                debugLog("PostViewModel", "게시글을 삭제했습니다.")
-            } else {
-                Log.e("PostViewModel", "게시글 삭제에 실패했습니다.")
-            }
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            postRepository.PostDelete(postId)
+                .onSuccess {
+                    _uiState.update { it.copy(isLoading = false) }
+                    debugLog("PostViewModel", "게시글을 삭제했습니다.")
+                }
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("게시글 삭제에 실패했습니다.")
+                        )
+                    }
+                }
         }
     }
 
-    // 경고/차단
     fun warningUser(email: String, status: String, reason: String, postId: String) {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             postRepository.PostWarning(email, status, reason)
                 .onSuccess { warning ->
                     if (warning.message == "이미 경고된 사용자 입니다.") {
-                        // 경고 중복 시 차단 재시도
                         warningUser(email, "차단", reason, postId)
                     } else {
-                        loadPostDetail(postId)  // 상세 정보 다시 조회
+                        _uiState.update { it.copy(isLoading = false) }
+                        loadPostDetail(postId)
                     }
                 }
-                .onFailure {
-                    errorMessage = "사용자 경고 또는 차단에 실패했습니다."
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("사용자 경고 또는 차단에 실패했습니다.")
+                        )
+                    }
                 }
         }
     }
 
-    /**
-     * 내가 쓴 게시글 목록 로드
-     */
     fun loadMyPosts() {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
             postRepository.getMyPosts()
-                .onSuccess {
-                    myPostList = it
+                .onSuccess { posts ->
+                    _uiState.update { it.copy(myPostList = posts, isLoading = false) }
                 }
-                .onFailure {
-                    errorMessage = "내 게시글을 불러오지 못했습니다."
-                    Log.e("PostViewModel", "내 게시글을 불러오지 못했습니다.")
+                .onFailure { error ->
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = error.userMessage("내 게시글을 불러오지 못했습니다.")
+                        )
+                    }
                 }
         }
     }
-
 }
