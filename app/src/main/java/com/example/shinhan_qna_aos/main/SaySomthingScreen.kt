@@ -12,12 +12,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.TitleContentCountButton
 import com.example.shinhan_qna_aos.main.api.PostRepository
 import com.example.shinhan_qna_aos.main.api.PostViewModel
@@ -68,6 +71,16 @@ fun SaySomthingScreen(postRepository: PostRepository, isAdmin: Boolean, navContr
 
 
     LazyColumn {
+        if (dataList.isEmpty() || uiState.errorMessage != null) {
+            item {
+                NetworkStateFeedback(
+                    isLoading = dataList.isEmpty() && uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
+                    onRetry = postViewModel::loadPosts,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
         items(dataList, key = { it.postID }) { board ->
             TitleContentCountButton(
                 title = board.title,

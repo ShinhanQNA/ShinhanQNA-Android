@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.TitleContentButton
 import com.example.shinhan_qna_aos.TopBar
 import com.example.shinhan_qna_aos.main.api.PostRepository
@@ -53,6 +54,14 @@ fun MyWriteScreen(postRepository: PostRepository, navController: NavController){
                     )
                     Divider()
                 }
+            }
+            if (myPostList.isEmpty() || uiState.errorMessage != null) {
+                NetworkStateFeedback(
+                    isLoading = myPostList.isEmpty() && uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
+                    onRetry = postViewModel::loadMyPosts,
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
             Text(
                 "배너광고",

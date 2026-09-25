@@ -37,6 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.ManagerEditDeleteButton
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.TitleContentButton
 import com.example.shinhan_qna_aos.TopBar
@@ -79,6 +80,15 @@ fun NotificationScreen(isAdmin: Boolean, notificationRepository: NotificationRep
                     )
                     Divider()
                 }
+            }
+
+            if (noticesList.isEmpty() || uiState.errorMessage != null) {
+                NetworkStateFeedback(
+                    isLoading = noticesList.isEmpty() && uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
+                    onRetry = { notificationViewModel.loadNotification() },
+                    modifier = Modifier.align(Alignment.Center)
+                )
             }
 
             if(isAdmin){// + 새공지 버튼 - 배너 바로 위 공간에 위치하도록 아래 패딩 추가
@@ -151,12 +161,21 @@ fun NotificationOpenScreen(id:Int, isAdmin: Boolean, notificationRepository: Not
                 }
             }
         }
-        if (uiState.editMode) {
+        if (!uiState.editMode && (selectedNotices == null || state.errorMessage != null)) {
+            NetworkStateFeedback(
+                isLoading = selectedNotices == null && state.isLoading,
+                errorMessage = state.errorMessage,
+                onRetry = { notificationViewModel.loadNotification(id) },
+                modifier = Modifier.fillMaxWidth()
+            )
+        } else if (uiState.editMode) {
             NoticesEditPostContent(
                 uiState = uiState,
                 notificationViewModel = notificationViewModel,
                 id = id.toString(),
-                navController = navController
+                navController = navController,
+                isLoading = state.isLoading,
+                errorMessage = state.errorMessage
             )
         } else {
             LazyColumn() {
@@ -168,12 +187,14 @@ fun NotificationOpenScreen(id:Int, isAdmin: Boolean, notificationRepository: Not
                     if (isAdmin) {
                         ManagerEditDeleteButton(
                             onDeleteClick = {
-                                notificationViewModel.deleteNotices(id)
-                                navController.popBackStack()
+                                notificationViewModel.deleteNotices(id) {
+                                    navController.popBackStack()
+                                }
                             },
                             onEditClick = {
                                     notificationViewModel.NoticesEditMode(selectedNotices)
-                            }
+                            },
+                            enabled = !state.isLoading
                         )
                     }
                 }

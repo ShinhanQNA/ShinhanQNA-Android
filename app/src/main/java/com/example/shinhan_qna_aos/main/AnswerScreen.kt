@@ -45,6 +45,7 @@ import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.debugLog
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.ManagerEditDeleteButton
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.TitleContentButton
 import com.example.shinhan_qna_aos.TopBar
@@ -104,6 +105,15 @@ fun AnsweredScreen(answerRepository: AnswerRepository, navController: NavControl
     LazyColumn(modifier = Modifier
         .fillMaxSize()
         .padding(bottom = 50.dp)) {
+        if (answerList.isEmpty() || uiState.errorMessage != null) {
+            item {
+                NetworkStateFeedback(
+                    isLoading = answerList.isEmpty() && uiState.isLoading,
+                    errorMessage = uiState.errorMessage,
+                    onRetry = answerViewModel::loadAnswers
+                )
+            }
+        }
         items(answerList, key = {it.id}) { answer ->
             TitleContentButton(
                 title = answer.title,
@@ -149,6 +159,9 @@ fun AnsweredOpenScreen(
                 .background(Color.White)
                 .padding(bottom = 50.dp)
         ) {
+            if (selectedAnswer == null) {
+                TopBar(null) { navController.popBackStack() }
+            }
             selectedAnswer?.let { answer ->
 
                 TopBar(if (uiState.editMode) "게시글 수정" else null) {
@@ -166,7 +179,9 @@ fun AnsweredOpenScreen(
                         uiState = uiState,
                         answerViewModel = answerViewModel,
                         id = id.toString(),
-                        navController = navController
+                        navController = navController,
+                        isLoading = state.isLoading,
+                        errorMessage = state.errorMessage
                     )
                 } else {
                     LazyColumn {
@@ -177,20 +192,30 @@ fun AnsweredOpenScreen(
                                 ManagerEditDeleteButton(
                                     onDeleteClick = {
                                         debugLog("AnswerScreen", "삭제 버튼을 눌렀습니다.")
-                                        answerViewModel.deleteAnswerPost(id)
-                                        navController.popBackStack()
+                                        answerViewModel.deleteAnswerPost(id) {
+                                            navController.popBackStack()
+                                        }
                                     },
                                     onEditClick = {
                                         answerViewModel.AnswerEditMode(
                                             selectedAnswer
                                         )
-                                    }
+                                    },
+                                    enabled = !state.isLoading
                                 )
                             }
                         }
                     }
                 }
             }
+        }
+        if (!uiState.editMode && (selectedAnswer == null || state.errorMessage != null)) {
+            NetworkStateFeedback(
+                isLoading = selectedAnswer == null && state.isLoading,
+                errorMessage = state.errorMessage,
+                onRetry = answerViewModel::loadAnswers,
+                modifier = Modifier.align(Alignment.Center)
+            )
         }
     }
 }
@@ -201,6 +226,8 @@ fun AnswerEditPostContent(
     answerViewModel: AnswerViewModel,
     id: String,
     navController: NavController,
+    isLoading: Boolean,
+    errorMessage: String?,
 ) {
     Box(
         modifier = Modifier
@@ -213,6 +240,12 @@ fun AnswerEditPostContent(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                item {
+                    NetworkStateFeedback(
+                        isLoading = isLoading,
+                        errorMessage = errorMessage
+                    )
+                }
                 item {
                     WritingTitleField(
                         value = uiState.title,
@@ -245,12 +278,10 @@ fun AnswerEditPostContent(
                 .padding(20.dp)
                 .background(Color.Black, RoundedCornerShape(12.dp))
                 .padding(horizontal = 18.dp, vertical = 12.dp)
-                .clickable {
+                .clickable(enabled = !isLoading) {
                     answerViewModel.updateAnswerPost(
                         id = id,
                         onSuccess = {
-                            answerViewModel.selectAnswerById(id.toInt()) // 상세 조회 로드
-                            answerViewModel.loadAnswers() // 전체 조회 로드
                             navController.navigate("answerOpen/$id")
                         }
                     )

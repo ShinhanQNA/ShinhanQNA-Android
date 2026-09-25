@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.LabeledField
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.PlainInputField
 import com.example.shinhan_qna_aos.info.api.InfoViewModel
 import com.example.shinhan_qna_aos.ui.theme.pretendard
@@ -147,8 +148,12 @@ fun InformationScreen(
                 onClick = {
                     infoViewModel.submitStudentInfo(context, reapplying, onSubmitted)
                 },
-                enabled = isFormValid)
-            uiState.errorMessage?.let { Text(it, color = Color(0xffFC4F4F)) }
+                enabled = isFormValid && !uiState.isLoading
+            )
+            NetworkStateFeedback(
+                isLoading = uiState.isLoading,
+                errorMessage = uiState.errorMessage
+            )
         }
     }
 }
@@ -310,6 +315,7 @@ fun ImageInsert(viewModel: InfoViewModel, fontSize: TextUnit) {
         ) {
             Button(
                 onClick = { launcher.launch("image/*") },
+                enabled = !uiState.isLoading,
                 colors = ButtonDefaults.buttonColors(Color.Black),
                 modifier = Modifier.defaultMinSize(minHeight = 36.dp),
                 shape = RoundedCornerShape(12.dp),

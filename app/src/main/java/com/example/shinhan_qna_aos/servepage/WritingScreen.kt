@@ -1,7 +1,6 @@
 package com.example.shinhan_qna_aos.servepage
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -28,7 +27,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -48,6 +46,7 @@ import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.TopBar
 import com.example.shinhan_qna_aos.servepage.api.WriteRepository
 import com.example.shinhan_qna_aos.servepage.api.WritingViewModel
@@ -73,13 +72,8 @@ fun WritingScreen(
     val answerUiState by answerViewModel.uiState.collectAsStateWithLifecycle()
     val state = writingUiState.form
     val answerstae = answerUiState.form
-
-    LaunchedEffect(writingUiState.errorMessage) {
-        writingUiState.errorMessage?.let {
-            Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
-            writingViewModel.clearError()
-        }
-    }
+    val isLoading = if (isAdmin) answerUiState.isLoading else writingUiState.isLoading
+    val errorMessage = if (isAdmin) answerUiState.errorMessage else writingUiState.errorMessage
     val launcher =
         rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             uri?.let {
@@ -101,6 +95,12 @@ fun WritingScreen(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                item {
+                    NetworkStateFeedback(
+                        isLoading = isLoading,
+                        errorMessage = errorMessage
+                    )
+                }
                 item {
                     WritingTitleField(
                         value = if (isAdmin) answerstae.title else state.title,
@@ -130,7 +130,7 @@ fun WritingScreen(
                                 modifier = Modifier
                                     .background(Color.Black, RoundedCornerShape(12.dp))
                                     .padding(horizontal = 12.dp, vertical = 8.dp)
-                                    .clickable { launcher.launch("image/*") },
+                                    .clickable(enabled = !isLoading) { launcher.launch("image/*") },
                             ) {
                                 Icon(
                                     painter = painterResource(lucide.images),
@@ -162,7 +162,7 @@ fun WritingScreen(
                 .padding(20.dp)             // FAB 기본 여백 느낌
                 .background(Color.Black, RoundedCornerShape(12.dp))
                 .padding(horizontal = 18.dp, vertical = 12.dp)
-                .clickable {
+                .clickable(enabled = !isLoading) {
                     if (isAdmin) {
                         answerViewModel.writeAnswer(
                             onSuccess = {

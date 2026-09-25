@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.Data
+import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.servepage.api.AppealRepository
@@ -70,6 +71,16 @@ fun AppealScreen1(appealRepository: AppealRepository, data: Data, navController:
             modifier = Modifier.size(128.dp)
         )
         Spacer(modifier = Modifier.height(36.dp))
+
+        if (blockReasonList.isEmpty()) {
+            NetworkStateFeedback(
+                isLoading = uiState.isLoading,
+                errorMessage = uiState.errorMessage,
+                onRetry = if (userEmail.isNotBlank()) {
+                    { appealViewModel.loadBlockReason(userEmail) }
+                } else null
+            )
+        }
 
         Text(
             text = "서비스 이용 제한 안내",
@@ -115,7 +126,7 @@ fun AppealScreen1(appealRepository: AppealRepository, data: Data, navController:
             modifier = Modifier
                 .background(Color(0xffFC4F4F), RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                .clickable {
+                .clickable(enabled = !uiState.isLoading) {
                     navController.navigate("appeal2") {
                         popUpTo("appeal1") { inclusive = true }
                     }
@@ -199,13 +210,17 @@ fun AppealScreen2(
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.height(36.dp))
+        NetworkStateFeedback(
+            isLoading = uiState.isLoading,
+            errorMessage = uiState.errorMessage
+        )
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
                 .background(Color.Black, RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-                .clickable {
+                .clickable(enabled = !uiState.isLoading) {
                     appealViewModel.loadAppeals {
                         onAppealSubmitted()
                     }
@@ -226,9 +241,6 @@ fun AppealScreen2(
                     fontSize = 14.sp
                 ),
             )
-        }
-        uiState.errorMessage?.let { message ->
-            Text(text = message, color = Color(0xffFC4F4F))
         }
     }
 }
