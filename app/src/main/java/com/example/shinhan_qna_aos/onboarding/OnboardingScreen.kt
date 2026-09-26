@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.times
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.info.api.InfoViewModel
@@ -90,8 +91,8 @@ fun OnboardingScreen(
                         maxH = maxH,
                         onFinish = {
                             data.onboarding = false
-                            navController.navigate("login") {
-                                popUpTo("onboarding") { inclusive = true }
+                            navController.navigate(AppRoute.LOGIN) {
+                                popUpTo(AppRoute.ONBOARDING) { inclusive = true }
                             }
                         }
                     )

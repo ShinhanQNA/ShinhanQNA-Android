@@ -45,6 +45,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.PlainInputField
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
@@ -112,7 +113,7 @@ fun DeclarationScreen(
                         isAdmin = isAdmin,
                         flagsCount = item.flagsCount,
                         banCount = item.banCount,
-                        onClick = { navController.navigate("declaration/${item.postID}/${item.reportId}") }
+                        onClick = { navController.navigate(AppRoute.declarationDetail(item.postID, item.reportId)) }
                     )
                     Divider()
                 }

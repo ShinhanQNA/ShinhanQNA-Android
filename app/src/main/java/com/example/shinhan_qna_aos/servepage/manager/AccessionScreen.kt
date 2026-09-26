@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import coil.compose.AsyncImage
 import com.example.shinhan_qna_aos.ManagerStudentInfo
 import com.example.shinhan_qna_aos.NetworkStateFeedback
@@ -86,7 +87,7 @@ fun AccessionScreen(
                         major = accessionData.department,
                         grade = accessionData.year,
                         onClick = {
-                            navController.navigate("accessionDetail/${accessionData.email}")
+                            navController.navigate(AppRoute.accessionDetail(accessionData.email))
                         }
                     )
                     Divider()

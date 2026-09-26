@@ -9,6 +9,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.Lifecycle
@@ -41,7 +42,6 @@ import com.example.shinhan_qna_aos.login.api.AuthSession
 import com.example.shinhan_qna_aos.login.api.AuthViewModel
 import com.example.shinhan_qna_aos.login.LoginScreen
 import com.example.shinhan_qna_aos.login.ManagerLoginScreen
-import com.example.shinhan_qna_aos.login.api.routeForAuthSession
 import com.example.shinhan_qna_aos.main.AnsweredOpenScreen
 import com.example.shinhan_qna_aos.main.AnsweredScreen
 import com.example.shinhan_qna_aos.main.MainScreen
@@ -105,25 +105,39 @@ fun AppNavigation(
 
     val authState by authViewModel.state.collectAsState()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
-    var handledNotificationEvent by remember { mutableStateOf<Long?>(null) }
-    val authRoute = if (data.onboarding) "onboarding" else routeForAuthSession(authState.session)
+    var handledNotificationKey by rememberSaveable { mutableStateOf<String?>(null) }
+    val authRoute = if (data.onboarding) AppRoute.ONBOARDING else AppRoute.forAuthSession(authState.session)
 
     LaunchedEffect(authState.session) {
         if (authState.isAuthenticated) pushTokenRegistrar.syncCurrentToken()
     }
 
     LaunchedEffect(notificationLaunch, authState.session, currentBackStackEntry) {
-        val launch = notificationLaunch ?: return@LaunchedEffect
-        if (handledNotificationEvent == launch.eventId || !authState.isAuthenticated) return@LaunchedEffect
-        if (!authState.canOpenNotifications) {
-            handledNotificationEvent = launch.eventId
-            return@LaunchedEffect
+        val currentEntry = currentBackStackEntry
+        val currentRoute = currentEntry?.destination?.route
+        val currentTargetId = when (currentRoute) {
+            AppRoute.WRITE_OPEN_PATTERN -> currentEntry?.arguments?.getString(AppRoute.ARG_POST_ID)
+            AppRoute.ANSWER_OPEN_PATTERN, AppRoute.NOTICE_OPEN_PATTERN ->
+                currentEntry?.arguments?.getInt(AppRoute.ARG_ID)?.takeIf { it > 0 }?.toString()
+            else -> null
         }
-        val currentRoute = currentBackStackEntry?.destination?.route ?: return@LaunchedEffect
-        if (data.onboarding || currentRoute == "login" || currentRoute == "onboarding") return@LaunchedEffect
-        navController.navigate(launch.route ?: "alarm") { launchSingleTop = true }
-        alarmViewModel.markRead(launch.key)
-        handledNotificationEvent = launch.eventId
+
+        val decision = notificationNavigationDecision(
+            launch = notificationLaunch,
+            handledKey = handledNotificationKey,
+            isAuthenticated = authState.isAuthenticated,
+            canOpenNotifications = authState.canOpenNotifications,
+            onboarding = data.onboarding,
+            currentRoute = currentRoute,
+            currentTargetId = currentTargetId
+        )
+        if (!decision.consume) return@LaunchedEffect
+
+        decision.route?.let { route ->
+            navController.navigate(route) { launchSingleTop = true }
+        }
+        if (decision.markRead) notificationLaunch?.let { alarmViewModel.markRead(it.key) }
+        handledNotificationKey = notificationLaunch?.key
     }
 
     // 앱 최초 진입 시 빠르게 보여줄 초기 화면 결정용 상태
@@ -165,15 +179,15 @@ fun AppNavigation(
         navController = navController,
         startDestination = initialRoute!!
     ) {
-        composable("onboarding") { OnboardingScreen(navController, data) }  // 온보딩
-        composable("login") {
+        composable(AppRoute.ONBOARDING) { OnboardingScreen(navController, data) }  // 온보딩
+        composable(AppRoute.LOGIN) {
             LoginScreen(
                 onKakaoLogin = authViewModel::loginWithKakao,
                 onGoogleLogin = authViewModel::loginWithGoogle,
-                onManagerLogin = { navController.navigate("manager_login") }
+                onManagerLogin = { navController.navigate(AppRoute.MANAGER_LOGIN) }
             )
         }
-        composable("manager_login") {
+        composable(AppRoute.MANAGER_LOGIN) {
             ManagerLoginScreen(
                 state = authViewModel.managerLoginData,
                 onIdChange = authViewModel::onAdminIdChange,
@@ -181,23 +195,23 @@ fun AppNavigation(
                 onLogin = authViewModel::loginAdmin
             )
         }
-        composable("info") {
+        composable(AppRoute.INFO) {
             InformationScreen(
                 infoViewModel = infoViewModel,
                 reapplying = authState.session is AuthSession.Reapplying,
                 onSubmitted = authViewModel::onStudentInfoSubmitted
             )
         }
-        composable("wait") { WaitScreen(data) }
-        composable("refuse") { RefuseScreen(data, authViewModel::beginReapplication) }
+        composable(AppRoute.WAIT) { WaitScreen(data) }
+        composable(AppRoute.REFUSE) { RefuseScreen(data, authViewModel::beginReapplication) }
         composable( // 메인 화면 선택 사항이 많아서 selectedTab으로 원하는 화면으로 조정 가능
-            "main?selectedTab={selectedTab}",
-            arguments = listOf(navArgument("selectedTab") {
+            AppRoute.MAIN_PATTERN,
+            arguments = listOf(navArgument(AppRoute.ARG_SELECTED_TAB) {
                 type = NavType.IntType
                 defaultValue = 0
             })
         ) { backStackEntry ->
-            val selectedTab = backStackEntry.arguments?.getInt("selectedTab") ?: 0
+            val selectedTab = backStackEntry.arguments?.getInt(AppRoute.ARG_SELECTED_TAB) ?: 0
             MainScreen(
                 postRepository = postRepository,
                 answerRepository = answerRepository,
@@ -208,92 +222,100 @@ fun AppNavigation(
             )
         }
         composable( // 게시글 상세 화면
-            "writeOpen/{postId}",
-            arguments = listOf(navArgument("postId") { type = NavType.StringType })
+            AppRoute.WRITE_OPEN_PATTERN,
+            arguments = listOf(navArgument(AppRoute.ARG_POST_ID) { type = NavType.StringType })
         ) { backStackEntry ->
-            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            val postId = backStackEntry.arguments?.getString(AppRoute.ARG_POST_ID) ?: ""
             WriteOpenScreen(navController, postRepository, writeRepository, data, authState.isAdmin, postId)
         }
 
-        composable("writeBoard") { WritingScreen(writeRepository, answerRepository, navController, authState.isAdmin) }
-        composable("answer") { AnsweredScreen(answerRepository, navController) } // 답변 화면
+        composable(AppRoute.WRITE_BOARD) { WritingScreen(writeRepository, answerRepository, navController, authState.isAdmin) }
+        composable(AppRoute.ANSWER) { AnsweredScreen(answerRepository, navController) } // 답변 화면
 
         composable( // 답변 상세 화면
-            "answerOpen/{id}",
-            arguments = listOf(navArgument("id") { type = NavType.IntType })
+            AppRoute.ANSWER_OPEN_PATTERN,
+            arguments = listOf(navArgument(AppRoute.ARG_ID) { type = NavType.IntType })
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getInt("id") ?: -1
+            val id = backStackEntry.arguments?.getInt(AppRoute.ARG_ID) ?: -1
             AnsweredOpenScreen(answerRepository, navController, authState.isAdmin, id)
         }
 
         composable( // 3주차 게시판 리스트로 있음
-            "threeWeekOpen/{groupId}",
-            arguments = listOf(navArgument("groupId") { type = NavType.IntType })
+            AppRoute.THREE_WEEK_OPEN_PATTERN,
+            arguments = listOf(navArgument(AppRoute.ARG_GROUP_ID) { type = NavType.IntType })
         ) { backStackEntry ->
-            val groupId = backStackEntry.arguments?.getInt("groupId") ?: -1
+            val groupId = backStackEntry.arguments?.getInt(AppRoute.ARG_GROUP_ID) ?: -1
             SelectedOpenScreen(groupId, twPostRepository, navController)
         }
 
         composable( // 3주차 게시판 상세화면
-            "threeWeekDetail/{groupId}/{id}",
-            arguments = listOf(navArgument("id") { type = NavType.IntType },navArgument("groupId") { type = NavType.IntType })
+            AppRoute.THREE_WEEK_DETAIL_PATTERN,
+            arguments = listOf(
+                navArgument(AppRoute.ARG_ID) { type = NavType.IntType },
+                navArgument(AppRoute.ARG_GROUP_ID) { type = NavType.IntType }
+            )
         ) { backStackEntry ->
-            val groupId = backStackEntry.arguments?.getInt("groupId") ?: -1
-            val id = backStackEntry.arguments?.getInt("id") ?: -1
+            val groupId = backStackEntry.arguments?.getInt(AppRoute.ARG_GROUP_ID) ?: -1
+            val id = backStackEntry.arguments?.getInt(AppRoute.ARG_ID) ?: -1
             SelectedDetailScreen(groupId , twPostRepository, navController, id)
         }
 
-        composable("myPage") { MypageScreen(navController, authViewModel::logout, authViewModel::cancelMember) }
-        composable("manager_myPage"){ ManagerScreen(navController, authViewModel::logout) }
+        composable(AppRoute.MY_PAGE) { MypageScreen(navController, authViewModel::logout, authViewModel::cancelMember) }
+        composable(AppRoute.MANAGER_MY_PAGE){ ManagerScreen(navController, authViewModel::logout) }
 
-        composable("my_page_write") { MyWriteScreen(postRepository, navController) } // 내가 작성한 게시글
+        composable(AppRoute.MY_PAGE_WRITE) { MyWriteScreen(postRepository, navController) } // 내가 작성한 게시글
 
-        composable("notices") { NotificationScreen(authState.isAdmin, notificationRepository, navController) }
+        composable(AppRoute.NOTICES) { NotificationScreen(authState.isAdmin, notificationRepository, navController) }
         composable( // 공지 상세 화면
-            "notices/{id}",
-            arguments = listOf(navArgument("id") { type = NavType.IntType })
+            AppRoute.NOTICE_OPEN_PATTERN,
+            arguments = listOf(navArgument(AppRoute.ARG_ID) { type = NavType.IntType })
         ) { backStackEntry ->
-            val id = backStackEntry.arguments?.getInt("id") ?: -1
+            val id = backStackEntry.arguments?.getInt(AppRoute.ARG_ID) ?: -1
             NotificationOpenScreen(id, authState.isAdmin, notificationRepository, navController)
         }
-        composable("notices_write"){ NotificationWriteScreen(notificationRepository, navController) } // 관리자 공지 작성 화면
+        composable(AppRoute.NOTICES_WRITE){ NotificationWriteScreen(notificationRepository, navController) } // 관리자 공지 작성 화면
 
-        composable("alarm") { AlarmScreen(navController, alarmViewModel) }
+        composable(AppRoute.ALARM) { AlarmScreen(navController, alarmViewModel) }
 
-        composable("appeal1"){ AppealScreen1(appealRepository, data, navController) }
-        composable("appeal2"){ AppealScreen2(appealRepository, navController, authViewModel::onAppealSubmitted) }
-        composable("appeal3"){ AppealScreen3(data) }
+        composable(AppRoute.APPEAL_1){ AppealScreen1(appealRepository, data, navController) }
+        composable(AppRoute.APPEAL_2){ AppealScreen2(appealRepository, navController, authViewModel::onAppealSubmitted) }
+        composable(AppRoute.APPEAL_3){ AppealScreen3(data) }
 
-        composable("declaration") { DeclarationScreen(declarationRepository, postRepository, authState.isAdmin, navController) }
+        composable(AppRoute.DECLARATION) { DeclarationScreen(declarationRepository, postRepository, authState.isAdmin, navController) }
         composable( // 신고된 게시글 상세
-            "declaration/{postId}/{reportId}",
+            AppRoute.DECLARATION_DETAIL_PATTERN,
             arguments = listOf(
-                navArgument("postId") { type = NavType.StringType },
-                navArgument("reportId") { type = NavType.IntType }
+                navArgument(AppRoute.ARG_POST_ID) { type = NavType.StringType },
+                navArgument(AppRoute.ARG_REPORT_ID) { type = NavType.IntType }
             )
         ) { backStackEntry ->
-            val postId = backStackEntry.arguments?.getString("postId") ?: ""
-            val reportId = backStackEntry.arguments?.getInt("reportId") ?: -1
+            val postId = backStackEntry.arguments?.getString(AppRoute.ARG_POST_ID) ?: ""
+            val reportId = backStackEntry.arguments?.getInt(AppRoute.ARG_REPORT_ID) ?: -1
             DeclarationOpenScreen(postId, reportId, navController, postRepository, declarationRepository)
         }
 
-        composable("accession") { AccessionScreen(accessionRepository, navController) } // 가입 신청자
-        composable("accessionDetail/{email}", arguments = listOf(navArgument("email") { type = NavType.StringType }) // 가입 신청 상세 글
+        composable(AppRoute.ACCESSION) { AccessionScreen(accessionRepository, navController) } // 가입 신청자
+        composable(AppRoute.ACCESSION_DETAIL_PATTERN, arguments = listOf(navArgument(AppRoute.ARG_EMAIL) { type = NavType.StringType }) // 가입 신청 상세 글
         ) { backStackEntry ->
-            val email = backStackEntry.arguments?.getString("email") ?: ""
+            val email = backStackEntry.arguments?.getString(AppRoute.ARG_EMAIL) ?: ""
             AccessionDetailScreen(accessionRepository, navController, email)
         }
 
-        composable("banclear") { BanClearScreen(banClearRepository, navController) } // 가입 신청자
-        composable("banclearDetail/{email}", arguments = listOf(navArgument("email") { type = NavType.StringType }) // 가입 신청 상세 글
+        composable(AppRoute.BAN_CLEAR) { BanClearScreen(banClearRepository, navController) } // 가입 신청자
+        composable(AppRoute.BAN_CLEAR_DETAIL_PATTERN, arguments = listOf(navArgument(AppRoute.ARG_EMAIL) { type = NavType.StringType }) // 가입 신청 상세 글
         ) { backStackEntry ->
-            val email = backStackEntry.arguments?.getString("email") ?: ""
+            val email = backStackEntry.arguments?.getString(AppRoute.ARG_EMAIL) ?: ""
             BanClearDetailScreen(banClearRepository, navController, email)
         }
-        composable("banclearPost/{email}/{postId}", arguments = listOf(navArgument("email") { type = NavType.StringType },navArgument("postId") { type = NavType.StringType }) // 가입 신청 상세 글
+        composable(
+            AppRoute.BAN_CLEAR_POST_PATTERN,
+            arguments = listOf(
+                navArgument(AppRoute.ARG_EMAIL) { type = NavType.StringType },
+                navArgument(AppRoute.ARG_POST_ID) { type = NavType.StringType }
+            ) // 가입 신청 상세 글
         ) { backStackEntry ->
-            val email = backStackEntry.arguments?.getString("email") ?: ""
-            val postId = backStackEntry.arguments?.getString("postId") ?: ""
+            val email = backStackEntry.arguments?.getString(AppRoute.ARG_EMAIL) ?: ""
+            val postId = backStackEntry.arguments?.getString(AppRoute.ARG_POST_ID) ?: ""
             BanClearPostScreen(banClearRepository, navController, email, postId.toInt(), authState.isAdmin)
         }
     }
@@ -304,11 +326,4 @@ class SimpleViewModelFactory<T: ViewModel>(
     private val creator: () -> T
 ): ViewModelProvider.Factory {
     override fun <VM : ViewModel> create(modelClass: Class<VM>): VM = creator() as VM
-}
-
-internal fun routeForNotification(type: String?, id: String?): String? = when (type) {
-    "notice" -> id?.toIntOrNull()?.takeIf { it > 0 }?.let { "notices/$it" }
-    "answer" -> id?.toIntOrNull()?.takeIf { it > 0 }?.let { "answerOpen/$it" }
-    "post" -> id?.toIntOrNull()?.takeIf { it > 0 }?.let { "writeOpen/$it" }
-    else -> null
 }

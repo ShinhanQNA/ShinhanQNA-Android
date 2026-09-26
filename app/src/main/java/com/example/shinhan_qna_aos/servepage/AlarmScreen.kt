@@ -35,10 +35,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.PushNotification
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.TopBar
-import com.example.shinhan_qna_aos.routeForNotification
 import com.jihan.lucide_icons.lucide
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -71,7 +71,7 @@ fun AlarmScreen(navController: NavController, viewModel: AlarmViewModel) {
                             notification = notification,
                             onOpen = {
                                 viewModel.markRead(notification)
-                                routeForNotification(notification.type, notification.targetId)?.let { route ->
+                                AppRoute.forNotification(notification.type, notification.targetId)?.let { route ->
                                     navController.navigate(route)
                                 }
                             },

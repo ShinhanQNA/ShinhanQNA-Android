@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.LikeFlagBan
 import com.example.shinhan_qna_aos.ManagerStudentInfo
@@ -85,7 +86,7 @@ fun BanClearScreen(
                         major = banClearList.department,
                         grade = banClearList.year,
                         onClick = {
-                            navController.navigate("banclearDetail/${banClearList.email}")
+                            navController.navigate(AppRoute.banClearDetail(banClearList.email))
                         }
                     )
                     Divider()
@@ -186,7 +187,7 @@ fun BanClearDetailScreen(
                             isAdmin = true,
                             flagsCount = boarddata.reportCount,
                             banCount = warningStatusToBanCount(boarddata.warningStatus).toInt(),
-                            onClick = { navController.navigate("banclearPost/${boarddata.writerEmail}/${boarddata.postId}") }
+                            onClick = { navController.navigate(AppRoute.banClearPost(boarddata.writerEmail, boarddata.postId)) }
                         )
                         Divider()
                     }

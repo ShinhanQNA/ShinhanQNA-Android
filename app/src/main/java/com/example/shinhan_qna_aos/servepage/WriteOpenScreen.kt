@@ -46,6 +46,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
@@ -123,7 +124,11 @@ fun WriteOpenScreen(
                 .fillMaxSize()
                 .padding(bottom = 50.dp)
             ) {
-                TopBar(if (uiState.isEditMode) "게시글 수정" else null) { navController.navigate("main?selectedTab=0") {popUpTo("writeOpen/$postId"){inclusive=true} }}
+                TopBar(if (uiState.isEditMode) "게시글 수정" else null) {
+                    navController.navigate(AppRoute.main(0)) {
+                        popUpTo(AppRoute.writeOpen(postId)) { inclusive = true }
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 

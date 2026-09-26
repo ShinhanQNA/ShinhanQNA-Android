@@ -26,6 +26,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.Caution
 import com.example.shinhan_qna_aos.TopBar
 import com.example.shinhan_qna_aos.ui.theme.pretendard
@@ -42,10 +43,10 @@ fun ManagerScreen(navController: NavController, onLogout: () -> Unit){
         ) {
             TopBar("관리자", {navController.popBackStack()})
             ManagerMypageButton(
-                accessionClick = { navController.navigate("accession") },
+                accessionClick = { navController.navigate(AppRoute.ACCESSION) },
                 onLogoutClick = onLogout,
-                onDeclarationClick = { navController.navigate("declaration") },
-                banClearonClick = { navController.navigate("banclear") }
+                onDeclarationClick = { navController.navigate(AppRoute.DECLARATION) },
+                banClearonClick = { navController.navigate(AppRoute.BAN_CLEAR) }
             )
             Spacer(modifier = Modifier.height(16.dp))
             Caution()

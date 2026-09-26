@@ -55,6 +55,7 @@ class MainActivity : ComponentActivity() {
         val values = keys.mapNotNull { key -> intent.getStringExtra(key)?.let { key to it } }.toMap()
         val incoming = incomingPush(values) ?: return null
         val saved = PushNotificationStore.add(this, incoming.title, incoming.body, incoming.type, incoming.targetId, incoming.key)
-        return NotificationLaunch(saved.key, routeForNotification(saved.type, saved.targetId))
+        keys.forEach(intent::removeExtra)
+        return NotificationLaunch(saved.key, AppRoute.forNotification(saved.type, saved.targetId))
     }
 }

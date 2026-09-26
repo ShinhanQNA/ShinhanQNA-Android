@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.R
@@ -127,8 +128,8 @@ fun AppealScreen1(appealRepository: AppealRepository, data: Data, navController:
                 .background(Color(0xffFC4F4F), RoundedCornerShape(12.dp))
                 .padding(horizontal = 12.dp, vertical = 8.dp)
                 .clickable(enabled = !uiState.isLoading) {
-                    navController.navigate("appeal2") {
-                        popUpTo("appeal1") { inclusive = true }
+                    navController.navigate(AppRoute.APPEAL_2) {
+                        popUpTo(AppRoute.APPEAL_1) { inclusive = true }
                     }
                 },
         ) {

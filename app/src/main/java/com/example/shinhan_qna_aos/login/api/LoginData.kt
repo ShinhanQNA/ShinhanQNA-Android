@@ -74,16 +74,6 @@ internal fun authSessionForUser(
     else -> AuthSession.NeedsStudentInfo
 }
 
-internal fun routeForAuthSession(session: AuthSession): String? = when (session) {
-    AuthSession.Checking -> null
-    AuthSession.SignedOut -> "login"
-    AuthSession.NeedsStudentInfo, AuthSession.Reapplying -> "info"
-    AuthSession.Pending -> "wait"
-    AuthSession.Rejected -> "refuse"
-    AuthSession.Active, AuthSession.Warned, AuthSession.Admin -> "main"
-    is AuthSession.Blocked -> if (session.appealSubmitted) "appeal3" else "appeal1"
-}
-
 data class LogoutData(
     val message: String
 )
