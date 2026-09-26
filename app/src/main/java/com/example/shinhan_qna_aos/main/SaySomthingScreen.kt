@@ -19,6 +19,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.TitleContentCountButton
@@ -89,7 +90,7 @@ fun SaySomthingScreen(postRepository: PostRepository, isAdmin: Boolean, navContr
                 isAdmin = isAdmin,
                 flagsCount = board.flagsCount,
                 banCount = board.banCount.toInt(),
-                onClick = { navController.navigate("writeOpen/${board.postID}") }
+                onClick = { navController.navigate(AppRoute.writeOpen(board.postID)) }
             )
             Divider()
         }

@@ -27,6 +27,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.Caution
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.TopBar
@@ -46,10 +47,14 @@ fun MypageScreen(
                 .padding(bottom = 50.dp)
                 .background(Color.White)
         ) {
-            TopBar("마이페이지", { navController.navigate("main?selectedTab=0") {popUpTo("myPage"){inclusive=true} }})
+            TopBar("마이페이지", {
+                navController.navigate(AppRoute.main(0)) {
+                    popUpTo(AppRoute.MY_PAGE) { inclusive = true }
+                }
+            })
             MypageButton(
                 onLogoutClick = onLogout,
-                onMyWriteClick = { navController.navigate("my_page_write") },
+                onMyWriteClick = { navController.navigate(AppRoute.MY_PAGE_WRITE) },
                 onCancleMember = onCancelMember
             )
             Spacer(modifier = Modifier.height(48.dp))

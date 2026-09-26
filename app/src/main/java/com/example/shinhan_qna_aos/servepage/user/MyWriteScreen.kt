@@ -23,6 +23,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.TitleContentButton
@@ -50,7 +51,7 @@ fun MyWriteScreen(postRepository: PostRepository, navController: NavController){
                     TitleContentButton(
                         title = data.title,
                         content = data.content,
-                        onClick = { navController.navigate("writeOpen/${data.postID}") }
+                        onClick = { navController.navigate(AppRoute.writeOpen(data.postID)) }
                     )
                     Divider()
                 }

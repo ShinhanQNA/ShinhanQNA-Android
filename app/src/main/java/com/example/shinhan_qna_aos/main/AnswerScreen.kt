@@ -42,6 +42,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.debugLog
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.ManagerEditDeleteButton
@@ -118,7 +119,7 @@ fun AnsweredScreen(answerRepository: AnswerRepository, navController: NavControl
             TitleContentButton(
                 title = answer.title,
                 content = answer.content,
-                onClick = { navController.navigate("answerOpen/${answer.id}") }
+                onClick = { navController.navigate(AppRoute.answerOpen(answer.id)) }
             )
             Divider()
         }
@@ -166,10 +167,10 @@ fun AnsweredOpenScreen(
 
                 TopBar(if (uiState.editMode) "게시글 수정" else null) {
                     if (uiState.editMode) {
-                        navController.navigate("answerOpen/${answer.id}")
+                        navController.navigate(AppRoute.answerOpen(answer.id))
                     } else {
-                        navController.navigate("main?selectedTab=2") {
-                            popUpTo("answerOpen/${answer.id}") { inclusive = true }
+                        navController.navigate(AppRoute.main(2)) {
+                            popUpTo(AppRoute.answerOpen(answer.id)) { inclusive = true }
                         }
                     }
                 }

@@ -39,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.main.api.AnswerRepository
 import com.example.shinhan_qna_aos.main.api.PostRepository
@@ -111,7 +112,7 @@ fun TopIcon(navController: NavController, isAdmin: Boolean){
             modifier = Modifier
                 .border(1.dp, color = Color(0xffDFDFDF), RoundedCornerShape(10.dp))
                 .padding(6.dp)
-                .clickable { navController.navigate("writeBoard") }
+                .clickable { navController.navigate(AppRoute.WRITE_BOARD) }
         ) {
             Icon(
                 painter = painterResource(lucide.plus),
@@ -124,7 +125,7 @@ fun TopIcon(navController: NavController, isAdmin: Boolean){
             modifier = Modifier
                 .border(1.dp, color = Color(0xffDFDFDF), RoundedCornerShape(10.dp))
                 .padding(6.dp)
-                .clickable { navController.navigate("notices") }
+                .clickable { navController.navigate(AppRoute.NOTICES) }
         ) {
             Icon(
                 painter = painterResource(R.drawable.shape),
@@ -137,7 +138,7 @@ fun TopIcon(navController: NavController, isAdmin: Boolean){
             modifier = Modifier
                 .border(1.dp, color = Color(0xffDFDFDF), RoundedCornerShape(10.dp))
                 .padding(6.dp)
-                .clickable { navController.navigate("alarm") }
+                .clickable { navController.navigate(AppRoute.ALARM) }
         ) {
             Icon(
                 painter = painterResource(lucide.bell_ring),
@@ -152,9 +153,9 @@ fun TopIcon(navController: NavController, isAdmin: Boolean){
                 .padding(6.dp)
                 .clickable {
                     if(isAdmin){
-                        navController.navigate("manager_myPage")
+                        navController.navigate(AppRoute.MANAGER_MY_PAGE)
                     }else {
-                        navController.navigate("myPage")
+                        navController.navigate(AppRoute.MY_PAGE)
                     }
                 }
         ){

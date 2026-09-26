@@ -51,6 +51,7 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.InfoIconCount
 import com.example.shinhan_qna_aos.NetworkStateFeedback
@@ -135,7 +136,7 @@ fun SelectedOpinionsScreen(twPostRepository: TWPostRepository, isAdmin: Boolean,
                     twPostViewModel.GroupStatusPost(opinion.groupId, newStatus)
                 },
                 onSelectDataClick = {
-                    navController.navigate("threeWeekOpen/${opinion.groupId}")
+                    navController.navigate(AppRoute.threeWeekOpen(opinion.groupId))
                 },
                 enabled = !uiState.isLoading
             )
@@ -173,8 +174,8 @@ fun SelectedOpenScreen(
             TopBar(
                 title = "${selectedYear}년 ${selectedMonth}월 3주차",
                 {
-                    navController.navigate("main?selectedTab=1") {
-                        popUpTo("threeWeekOpen/$groupId") { inclusive = true }
+                    navController.navigate(AppRoute.main(1)) {
+                        popUpTo(AppRoute.threeWeekOpen(groupId)) { inclusive = true }
                     }
                 }
             )
@@ -213,7 +214,7 @@ fun SelectedOpenScreen(
                         title = opinion.title,
                         content = opinion.content,
                         likeCount = opinion.likes,
-                        onClick = { navController.navigate("threeWeekDetail/${groupId}/${opinion.id}") }
+                        onClick = { navController.navigate(AppRoute.threeWeekDetail(groupId, opinion.id)) }
                     )
                     Divider()
                 }

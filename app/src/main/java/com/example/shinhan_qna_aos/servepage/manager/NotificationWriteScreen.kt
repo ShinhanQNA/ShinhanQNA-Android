@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.TopBar
@@ -114,8 +115,8 @@ fun NotificationWriteScreen(notificationRepository: NotificationRepository,navCo
                 .clickable(enabled = !uiState.isLoading) {
                     notificationViewModel.noticesWrite(
                         onSuccess = {
-                            navController.navigate("notices") {
-                                popUpTo("notices_write") { inclusive = true }
+                            navController.navigate(AppRoute.NOTICES) {
+                                popUpTo(AppRoute.NOTICES_WRITE) { inclusive = true }
                             }
                         }
                     )

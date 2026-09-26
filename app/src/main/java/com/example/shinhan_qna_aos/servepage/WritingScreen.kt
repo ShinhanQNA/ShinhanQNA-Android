@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
@@ -89,7 +90,11 @@ fun WritingScreen(
             .imePadding() // 키보드에 반응
     ) {
         Column {
-            TopBar("게시글 작성", { navController.navigate("main?selectedTab=0") {popUpTo("writeBoard"){inclusive=true} }})
+            TopBar("게시글 작성", {
+                navController.navigate(AppRoute.main(0)) {
+                    popUpTo(AppRoute.WRITE_BOARD) { inclusive = true }
+                }
+            })
 
             LazyColumn(
                 modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
@@ -166,16 +171,16 @@ fun WritingScreen(
                     if (isAdmin) {
                         answerViewModel.writeAnswer(
                             onSuccess = {
-                                navController.navigate("main?selectedTab=2") {
-                                    popUpTo("writeBoard") { inclusive = true }
+                                navController.navigate(AppRoute.main(2)) {
+                                    popUpTo(AppRoute.WRITE_BOARD) { inclusive = true }
                                 }
                             }
                         )
                     } else {
                         writingViewModel.uploadPost(
                             onSuccess = {
-                                navController.navigate("main?selectedTab=0") {
-                                    popUpTo("writeBoard") { inclusive = true }
+                                navController.navigate(AppRoute.main(0)) {
+                                    popUpTo(AppRoute.WRITE_BOARD) { inclusive = true }
                                 }
                             }
                         )

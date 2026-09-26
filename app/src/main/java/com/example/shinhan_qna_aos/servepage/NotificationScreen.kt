@@ -35,6 +35,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.example.shinhan_qna_aos.AppRoute
 import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.ManagerEditDeleteButton
 import com.example.shinhan_qna_aos.NetworkStateFeedback
@@ -65,7 +66,11 @@ fun NotificationScreen(isAdmin: Boolean, notificationRepository: NotificationRep
             .systemBarsPadding()
             .background(Color.White)
     ) {
-        TopBar("공지", { navController.navigate("main?selectedTab=0") {popUpTo("notices"){inclusive=true} }})
+        TopBar("공지", {
+            navController.navigate(AppRoute.main(0)) {
+                popUpTo(AppRoute.NOTICES) { inclusive = true }
+            }
+        })
         Box {
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
@@ -76,7 +81,7 @@ fun NotificationScreen(isAdmin: Boolean, notificationRepository: NotificationRep
                     TitleContentButton(
                         title = noticeslist.title,
                         content = noticeslist.content,
-                        onClick = { navController.navigate("notices/${noticeslist.id}")}
+                        onClick = { navController.navigate(AppRoute.noticeOpen(noticeslist.id))}
                     )
                     Divider()
                 }
@@ -93,7 +98,7 @@ fun NotificationScreen(isAdmin: Boolean, notificationRepository: NotificationRep
 
             if(isAdmin){// + 새공지 버튼 - 배너 바로 위 공간에 위치하도록 아래 패딩 추가
                 Button(
-                    onClick = { navController.navigate("notices_write") },
+                    onClick = { navController.navigate(AppRoute.NOTICES_WRITE) },
                     shape = RoundedCornerShape(6.dp),
                     colors = ButtonDefaults.buttonColors(Color.Black),
                     contentPadding = PaddingValues(0.dp),
@@ -154,10 +159,10 @@ fun NotificationOpenScreen(id:Int, isAdmin: Boolean, notificationRepository: Not
     Column(modifier = Modifier.systemBarsPadding().fillMaxSize().background(Color.White)) {
         TopBar(if (uiState.editMode) "게시글 수정" else null) {
             if (uiState.editMode) {
-                navController.navigate("notices/${id}")
+                navController.navigate(AppRoute.noticeOpen(id))
             } else {
-                navController.navigate("notices") {
-                    popUpTo("notices/${id}") { inclusive = true }
+                navController.navigate(AppRoute.NOTICES) {
+                    popUpTo(AppRoute.noticeOpen(id)) { inclusive = true }
                 }
             }
         }
