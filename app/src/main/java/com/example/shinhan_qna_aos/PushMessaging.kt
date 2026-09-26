@@ -27,7 +27,7 @@ import kotlin.coroutines.resume
 
 data class FcmTokenRequest(val fcmToken: String)
 
-data class NotificationLaunch(val key: String, val route: String?, val eventId: Long = System.nanoTime())
+data class NotificationLaunch(val key: String, val route: String?)
 
 internal data class IncomingPush(
     val title: String,
