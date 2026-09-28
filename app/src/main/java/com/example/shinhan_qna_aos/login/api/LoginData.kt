@@ -31,7 +31,10 @@ data class ManagerLoginData(
 data class AuthState(
     val session: AuthSession = AuthSession.Checking,
     val isLoading: Boolean = false,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val onboarding: Boolean = true,
+    val userName: String? = null,
+    val userEmail: String? = null
 ) {
     val isAuthenticated: Boolean
         get() = session !is AuthSession.Checking && session !is AuthSession.SignedOut
