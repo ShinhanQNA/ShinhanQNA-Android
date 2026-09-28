@@ -25,13 +25,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.ui.theme.pretendard
 import com.jihan.lucide_icons.lucide
 
 @Composable
-fun RefuseScreen(data: Data, onReapply: () -> Unit) {
+fun RefuseScreen(userName: String?, onReapply: () -> Unit) {
     Column(
         modifier = Modifier.fillMaxSize()
             .padding(horizontal = 20.dp)
@@ -59,7 +58,7 @@ fun RefuseScreen(data: Data, onReapply: () -> Unit) {
         Spacer(modifier = Modifier.height(36.dp))
 
         Text(
-            text = "관리자가 [${data.userName}]님의 가입을 거절하였습니다.",
+            text = "관리자가 [${userName}]님의 가입을 거절하였습니다.",
             style = TextStyle(
                 fontFamily = pretendard,
                 fontWeight = FontWeight.Normal,

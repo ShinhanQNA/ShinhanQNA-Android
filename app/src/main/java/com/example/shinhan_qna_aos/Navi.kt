@@ -106,13 +106,13 @@ fun AppNavigation(
     val authState by authViewModel.state.collectAsState()
     val currentBackStackEntry by navController.currentBackStackEntryAsState()
     var handledNotificationKey by rememberSaveable { mutableStateOf<String?>(null) }
-    val authRoute = if (data.onboarding) AppRoute.ONBOARDING else AppRoute.forAuthSession(authState.session)
+    val authRoute = AppRoute.forAuthState(authState)
 
     LaunchedEffect(authState.session) {
         if (authState.isAuthenticated) pushTokenRegistrar.syncCurrentToken()
     }
 
-    LaunchedEffect(notificationLaunch, authState.session, currentBackStackEntry) {
+    LaunchedEffect(notificationLaunch, authState.session, authState.onboarding, currentBackStackEntry) {
         val currentEntry = currentBackStackEntry
         val currentRoute = currentEntry?.destination?.route
         val currentTargetId = when (currentRoute) {
@@ -127,7 +127,7 @@ fun AppNavigation(
             handledKey = handledNotificationKey,
             isAuthenticated = authState.isAuthenticated,
             canOpenNotifications = authState.canOpenNotifications,
-            onboarding = data.onboarding,
+            onboarding = authState.onboarding,
             currentRoute = currentRoute,
             currentTargetId = currentTargetId
         )
@@ -179,7 +179,14 @@ fun AppNavigation(
         navController = navController,
         startDestination = initialRoute!!
     ) {
-        composable(AppRoute.ONBOARDING) { OnboardingScreen(navController, data) }  // 온보딩
+        composable(AppRoute.ONBOARDING) {
+            OnboardingScreen(onFinish = {
+                authViewModel.completeOnboarding()
+                navController.navigate(AppRoute.LOGIN) {
+                    popUpTo(AppRoute.ONBOARDING) { inclusive = true }
+                }
+            })
+        }
         composable(AppRoute.LOGIN) {
             LoginScreen(
                 onKakaoLogin = authViewModel::loginWithKakao,
@@ -202,8 +209,8 @@ fun AppNavigation(
                 onSubmitted = authViewModel::onStudentInfoSubmitted
             )
         }
-        composable(AppRoute.WAIT) { WaitScreen(data) }
-        composable(AppRoute.REFUSE) { RefuseScreen(data, authViewModel::beginReapplication) }
+        composable(AppRoute.WAIT) { WaitScreen(authState.userName) }
+        composable(AppRoute.REFUSE) { RefuseScreen(authState.userName, authViewModel::beginReapplication) }
         composable( // 메인 화면 선택 사항이 많아서 selectedTab으로 원하는 화면으로 조정 가능
             AppRoute.MAIN_PATTERN,
             arguments = listOf(navArgument(AppRoute.ARG_SELECTED_TAB) {
@@ -226,7 +233,7 @@ fun AppNavigation(
             arguments = listOf(navArgument(AppRoute.ARG_POST_ID) { type = NavType.StringType })
         ) { backStackEntry ->
             val postId = backStackEntry.arguments?.getString(AppRoute.ARG_POST_ID) ?: ""
-            WriteOpenScreen(navController, postRepository, writeRepository, data, authState.isAdmin, postId)
+            WriteOpenScreen(navController, postRepository, writeRepository, authState.userEmail, authState.isAdmin, postId)
         }
 
         composable(AppRoute.WRITE_BOARD) { WritingScreen(writeRepository, answerRepository, navController, authState.isAdmin) }
@@ -277,9 +284,9 @@ fun AppNavigation(
 
         composable(AppRoute.ALARM) { AlarmScreen(navController, alarmViewModel) }
 
-        composable(AppRoute.APPEAL_1){ AppealScreen1(appealRepository, data, navController) }
+        composable(AppRoute.APPEAL_1){ AppealScreen1(appealRepository, authState.userName, authState.userEmail, navController) }
         composable(AppRoute.APPEAL_2){ AppealScreen2(appealRepository, navController, authViewModel::onAppealSubmitted) }
-        composable(AppRoute.APPEAL_3){ AppealScreen3(data) }
+        composable(AppRoute.APPEAL_3){ AppealScreen3(authState.userName) }
 
         composable(AppRoute.DECLARATION) { DeclarationScreen(declarationRepository, postRepository, authState.isAdmin, navController) }
         composable( // 신고된 게시글 상세
