@@ -6,6 +6,14 @@ import org.junit.Test
 
 class AuthStateTest {
     @Test
+    fun onboardingTakesPriorityUntilCompleted() {
+        assertEquals("onboarding", AppRoute.forAuthState(AuthState(session = AuthSession.SignedOut)))
+        assertEquals("login", AppRoute.forAuthState(AuthState(session = AuthSession.SignedOut, onboarding = false)))
+        assertEquals("main", AppRoute.forAuthState(AuthState(session = AuthSession.Active, onboarding = false)))
+        assertEquals(null, AppRoute.forAuthState(AuthState(session = AuthSession.Checking, onboarding = false)))
+    }
+
+    @Test
     fun existingUserStatusDestinationsRemainUnchanged() {
         assertEquals("info", AppRoute.forAuthSession(authSessionForUser("", false, false)))
         assertEquals("wait", AppRoute.forAuthSession(authSessionForUser("가입 대기 중", false, false)))

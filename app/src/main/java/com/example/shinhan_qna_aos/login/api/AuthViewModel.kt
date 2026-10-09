@@ -24,7 +24,7 @@ class AuthViewModel(
     private val infoRepository: InfoRepository,
     private val data: Data
 ) : ViewModel() {
-    private val _state = MutableStateFlow(AuthState())
+    private val _state = MutableStateFlow(currentState(AuthSession.Checking))
     val state: StateFlow<AuthState> = _state.asStateFlow()
 
     var managerLoginData by mutableStateOf(ManagerLoginData())
@@ -109,17 +109,22 @@ class AuthViewModel(
         refreshSession()
     }
 
+    fun completeOnboarding() {
+        data.onboarding = false
+        _state.value = _state.value.copy(onboarding = false)
+    }
+
     fun beginReapplication() {
         invalidateAuthRequest()
         data.isReapplying = true
-        _state.value = AuthState(session = AuthSession.Reapplying)
+        _state.value = currentState(AuthSession.Reapplying)
     }
 
     fun onStudentInfoSubmitted(reapplying: Boolean) {
         if (reapplying) {
             invalidateAuthRequest()
             data.isReapplying = false
-            _state.value = AuthState(session = AuthSession.Pending)
+            _state.value = currentState(AuthSession.Pending)
         }
         refreshUserStatus()
     }
@@ -128,7 +133,7 @@ class AuthViewModel(
         invalidateAuthRequest()
         data.isAppealCompleted = true
         if (_state.value.session is AuthSession.Blocked) {
-            _state.value = AuthState(session = AuthSession.Blocked(appealSubmitted = true))
+            _state.value = currentState(AuthSession.Blocked(appealSubmitted = true))
         }
     }
 
@@ -208,13 +213,13 @@ class AuthViewModel(
     }
 
     private fun applyState(version: Long, session: AuthSession) {
-        if (version == requestVersion) _state.value = AuthState(session = session)
+        if (version == requestVersion) _state.value = currentState(session)
     }
 
     private fun applyLoginError(version: Long, message: String) {
         if (version == requestVersion) {
             awaitingUserAfterLogin = false
-            _state.value = AuthState(session = AuthSession.SignedOut, errorMessage = message)
+            _state.value = currentState(AuthSession.SignedOut, message)
         }
     }
 
@@ -226,14 +231,22 @@ class AuthViewModel(
             current is AuthSession.Checking -> cachedSession()
             else -> current
         }
-        _state.value = AuthState(session = fallback, errorMessage = message)
+        _state.value = currentState(fallback, message)
     }
 
     private fun showLoginError(message: String) {
         invalidateAuthRequest()
         awaitingUserAfterLogin = false
-        _state.value = AuthState(session = AuthSession.SignedOut, errorMessage = message)
+        _state.value = currentState(AuthSession.SignedOut, message)
     }
+
+    private fun currentState(session: AuthSession, errorMessage: String? = null) = AuthState(
+        session = session,
+        errorMessage = errorMessage,
+        onboarding = data.onboarding,
+        userName = data.userName,
+        userEmail = data.userEmail
+    )
 
     private fun invalidateAuthRequest() {
         authJob?.cancel()

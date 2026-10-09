@@ -51,7 +51,6 @@ import com.example.shinhan_qna_aos.DetailContent
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
 import com.example.shinhan_qna_aos.TopBar
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.debugLog
 import com.example.shinhan_qna_aos.LikeFlagBan
 import com.example.shinhan_qna_aos.ManagerButton
@@ -71,7 +70,7 @@ fun WriteOpenScreen(
     navController: NavController,
     postRepository: PostRepository,
     writeRepository: WriteRepository,
-    data: Data,
+    userEmail: String?,
     isAdmin: Boolean,
     postId: String,
 ) {
@@ -111,7 +110,7 @@ fun WriteOpenScreen(
     }
 
     postDetail?.let { detail ->
-        val isOwner = data.userEmail == detail.writerEmail
+        val isOwner = userEmail == detail.writerEmail
 
         Box(
             modifier = Modifier

@@ -1,6 +1,7 @@
 package com.example.shinhan_qna_aos
 
 import com.example.shinhan_qna_aos.login.api.AuthSession
+import com.example.shinhan_qna_aos.login.api.AuthState
 
 internal object AppRoute {
     const val ARG_SELECTED_TAB = "selectedTab"
@@ -75,6 +76,9 @@ internal object AppRoute {
         AuthSession.Active, AuthSession.Warned, AuthSession.Admin -> MAIN
         is AuthSession.Blocked -> if (session.appealSubmitted) APPEAL_3 else APPEAL_1
     }
+
+    fun forAuthState(state: AuthState): String? =
+        if (state.onboarding) ONBOARDING else forAuthSession(state.session)
 
     fun forNotification(type: String?, id: String?): String? {
         val targetId = id?.toIntOrNull()?.takeIf { it > 0 } ?: return null

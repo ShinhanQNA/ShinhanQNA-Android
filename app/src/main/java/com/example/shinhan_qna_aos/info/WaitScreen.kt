@@ -23,13 +23,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.ui.theme.pretendard
 
 // 대기 화면
 @Composable
-fun WaitScreen(data: Data) {
+fun WaitScreen(userName: String?) {
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -66,7 +65,7 @@ fun WaitScreen(data: Data) {
             Spacer(modifier = Modifier.height(36.dp))
 
             Text(
-                text = "[${data.userName}]님의 가입 신청 내용을 안전하게 전달했어요.",
+                text = "[${userName}]님의 가입 신청 내용을 안전하게 전달했어요.",
                 style = TextStyle(
                     fontFamily = pretendard,
                     fontWeight = FontWeight.Normal,

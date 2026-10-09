@@ -32,7 +32,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.shinhan_qna_aos.AppRoute
-import com.example.shinhan_qna_aos.Data
 import com.example.shinhan_qna_aos.NetworkStateFeedback
 import com.example.shinhan_qna_aos.R
 import com.example.shinhan_qna_aos.SimpleViewModelFactory
@@ -42,17 +41,17 @@ import com.example.shinhan_qna_aos.ui.theme.pretendard
 import com.jihan.lucide_icons.lucide
 
 @Composable
-fun AppealScreen1(appealRepository: AppealRepository, data: Data, navController: NavController) {
+fun AppealScreen1(appealRepository: AppealRepository, userName: String?, userEmail: String?, navController: NavController) {
     val appealViewModel: AppealViewModel = viewModel(factory = SimpleViewModelFactory { AppealViewModel(appealRepository) })
     val uiState by appealViewModel.uiState.collectAsStateWithLifecycle()
 
     // userEmail 안전하게 가져오기 (기본값 or 안내 메시지 할당)
-    val userEmail = data.userEmail ?: ""
+    val email = userEmail ?: ""
 
     // email이 빈 문자열이면 호출 안함 → 기본값, 에러 처리 등 옵션 선택
-    LaunchedEffect(userEmail) {
-        if (userEmail.isNotBlank()) {
-            appealViewModel.loadBlockReason(userEmail)
+    LaunchedEffect(email) {
+        if (email.isNotBlank()) {
+            appealViewModel.loadBlockReason(email)
         }
     }
     // ViewModel에서 받은 단일 차단 사유 데이터
@@ -77,8 +76,8 @@ fun AppealScreen1(appealRepository: AppealRepository, data: Data, navController:
             NetworkStateFeedback(
                 isLoading = uiState.isLoading,
                 errorMessage = uiState.errorMessage,
-                onRetry = if (userEmail.isNotBlank()) {
-                    { appealViewModel.loadBlockReason(userEmail) }
+                onRetry = if (email.isNotBlank()) {
+                    { appealViewModel.loadBlockReason(email) }
                 } else null
             )
         }
@@ -96,7 +95,7 @@ fun AppealScreen1(appealRepository: AppealRepository, data: Data, navController:
 
         Text(
             text = buildString {
-                append("[${data.userName}]님은 다음 사유로 인해 서비스 이용이 영구적으로 정지되었음을 알려드립니다.\n\n")
+                append("[${userName}]님은 다음 사유로 인해 서비스 이용이 영구적으로 정지되었음을 알려드립니다.\n\n")
                 // 뒤에서 2개 요소만 취함
                 blockReasonList.takeLast(2).forEachIndexed { index, reason ->
                     append("${index + 1}. $reason\n")
@@ -247,7 +246,7 @@ fun AppealScreen2(
 }
 
 @Composable
-fun AppealScreen3(data: Data) {
+fun AppealScreen3(userName: String?) {
     Column(
         modifier = Modifier.fillMaxSize()
             .padding(horizontal = 20.dp)
@@ -275,7 +274,7 @@ fun AppealScreen3(data: Data) {
         Spacer(modifier = Modifier.height(36.dp))
 
         Text(
-            text = "[${data.userName}]님의 이의 제기 신청이 완료되었습니다.",
+            text = "[${userName}]님의 이의 제기 신청이 완료되었습니다.",
             style = TextStyle(
                 fontFamily = pretendard,
                 fontWeight = FontWeight.Normal,
